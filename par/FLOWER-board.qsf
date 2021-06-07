@@ -1,0 +1,276 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2018  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 18.1.0 Build 625 09/12/2018 SJ Standard Edition
+# Date created = 08:39:28  April 17, 2020
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		FLOWER-board_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "Cyclone V"
+set_global_assignment -name DEVICE 5CEBA5F23C7
+set_global_assignment -name TOP_LEVEL_ENTITY flower_top
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 18.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "13:23:44  OCTOBER 30, 2020"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Standard Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 5A
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 4A
+set_global_assignment -name IOBANK_VCCIO 1.8V -section_id 3B
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_location_assignment PIN_V15 -to adc1_fclk_i
+set_location_assignment PIN_V14 -to "adc1_fclk_i(n)"
+set_location_assignment PIN_W16 -to adc1_lclk_i
+set_location_assignment PIN_V16 -to "adc1_lclk_i(n)"
+set_location_assignment PIN_H13 -to adc0_lclk_i
+set_location_assignment PIN_G13 -to "adc0_lclk_i(n)"
+set_location_assignment PIN_H16 -to adc0_fclk_i
+set_location_assignment PIN_H15 -to "adc0_fclk_i(n)"
+set_global_assignment -name IOBANK_VCCIO 3.3V -section_id 3A
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 5B
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 7A
+set_global_assignment -name IOBANK_VCCIO 1.8V -section_id 8A
+set_location_assignment PIN_N16 -to sys_clock_i
+set_location_assignment PIN_M16 -to "sys_clock_i(n)"
+set_location_assignment PIN_E10 -to board_clock_i
+set_location_assignment PIN_R14 -to adc1_dA_i[0]
+set_location_assignment PIN_P14 -to "adc1_dA_i[0](n)"
+set_location_assignment PIN_U17 -to adc1_dB_i[0]
+set_location_assignment PIN_U16 -to "adc1_dB_i[0](n)"
+set_location_assignment PIN_V18 -to adc1_dA_i[1]
+set_location_assignment PIN_V19 -to "adc1_dA_i[1](n)"
+set_location_assignment PIN_W19 -to adc1_dB_i[1]
+set_location_assignment PIN_V20 -to "adc1_dB_i[1](n)"
+set_location_assignment PIN_Y19 -to adc1_dA_i[2]
+set_location_assignment PIN_Y20 -to "adc1_dA_i[2](n)"
+set_location_assignment PIN_U15 -to adc1_dB_i[2]
+set_location_assignment PIN_T14 -to "adc1_dB_i[2](n)"
+set_location_assignment PIN_T13 -to adc1_dA_i[3]
+set_location_assignment PIN_T12 -to "adc1_dA_i[3](n)"
+set_location_assignment PIN_U13 -to adc1_dB_i[3]
+set_location_assignment PIN_V13 -to "adc1_dB_i[3](n)"
+set_location_assignment PIN_M22 -to cal_pulse_o
+set_location_assignment PIN_D13 -to sync_i
+set_location_assignment PIN_C13 -to "sync_i(n)"
+set_location_assignment PIN_D12 -to systrig_i
+set_location_assignment PIN_E12 -to "systrig_i(n)"
+set_location_assignment PIN_B12 -to systrig_o
+set_location_assignment PIN_A12 -to "systrig_o(n)"
+set_location_assignment PIN_K20 -to adc0_dB_i[3]
+set_location_assignment PIN_K19 -to "adc0_dB_i[3](n)"
+set_location_assignment PIN_J21 -to adc0_dA_i[3]
+set_location_assignment PIN_J22 -to "adc0_dA_i[3](n)"
+set_location_assignment PIN_G18 -to adc0_dB_i[2]
+set_location_assignment PIN_H18 -to "adc0_dB_i[2](n)"
+set_location_assignment PIN_H21 -to adc0_dA_i[2]
+set_location_assignment PIN_G21 -to "adc0_dA_i[2](n)"
+set_location_assignment PIN_C19 -to adc0_dB_i[1]
+set_location_assignment PIN_C18 -to "adc0_dB_i[1](n)"
+set_location_assignment PIN_C21 -to adc0_dA_i[1]
+set_location_assignment PIN_B21 -to "adc0_dA_i[1](n)"
+set_location_assignment PIN_A18 -to adc0_dB_i[0]
+set_location_assignment PIN_A17 -to "adc0_dB_i[0](n)"
+set_location_assignment PIN_C15 -to adc0_dA_i[0]
+set_location_assignment PIN_B15 -to "adc0_dA_i[0](n)"
+set_location_assignment PIN_V6 -to gpio_sas_io[0]
+set_location_assignment PIN_U7 -to gpio_sas_io[1]
+set_location_assignment PIN_T7 -to gpio_sas_io[2]
+set_location_assignment PIN_R6 -to gpio_sas_io[3]
+set_location_assignment PIN_A10 -to adc0_pd_o
+set_location_assignment PIN_A9 -to adc0_spi_resetn_o
+set_location_assignment PIN_A8 -to adc0_spi_sclk_o
+set_location_assignment PIN_A7 -to adc0_spi_sdata_o
+set_location_assignment PIN_A5 -to adc0_spi_csn_o
+set_location_assignment PIN_D7 -to pll_intrpt_i
+set_location_assignment PIN_B6 -to pll_sda_io
+set_location_assignment PIN_L7 -to usb_uart_cts_i
+set_location_assignment PIN_K7 -to usb_uart_rts_o
+set_location_assignment PIN_H6 -to usb_uart_rx_i
+set_location_assignment PIN_F7 -to usb_uart_tx_o
+set_location_assignment PIN_AB5 -to adc1_spi_csn_o
+set_location_assignment PIN_AB6 -to adc1_pd_o
+set_location_assignment PIN_AB7 -to adc1_spi_resetn_o
+set_location_assignment PIN_AB8 -to adc1_spi_sclk_o
+set_location_assignment PIN_AA8 -to adc1_spi_sdata_o
+set_location_assignment PIN_K22 -to cal_sel_o
+set_location_assignment PIN_AB22 -to biastee_sel_o[0]
+set_location_assignment PIN_AA22 -to biastee_sel_o[1]
+set_location_assignment PIN_Y22 -to biastee_sel_o[2]
+set_location_assignment PIN_W22 -to biastee_sel_o[3]
+set_location_assignment PIN_U22 -to biastee_sel_o[4]
+set_location_assignment PIN_T22 -to biastee_sel_o[5]
+set_location_assignment PIN_P22 -to biastee_sel_o[7]
+set_location_assignment PIN_R22 -to biastee_sel_o[6]
+set_location_assignment PIN_AB13 -to gpio_board_io[0]
+set_location_assignment PIN_AB12 -to gpio_board_io[1]
+set_location_assignment PIN_AB11 -to gpio_board_io[2]
+set_location_assignment PIN_AB10 -to gpio_board_io[3]
+set_location_assignment PIN_AA13 -to gpio_board_io[4]
+set_location_assignment PIN_B16 -to spi_cs_i
+set_location_assignment PIN_A15 -to spi_sclk_i
+set_location_assignment PIN_A14 -to spi_miso_o
+set_location_assignment PIN_A13 -to spi_mosi_i
+set_location_assignment PIN_N21 -to sma_aux0_io
+set_location_assignment PIN_N20 -to sma_aux1_io
+set_location_assignment PIN_AB20 -to gpio_board_io[5]
+set_location_assignment PIN_AB21 -to gpio_board_io[6]
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dA_i[3]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dA_i[2]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dA_i[1]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dA_i[0]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dB_i[3]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dB_i[2]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dB_i[1]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_dB_i[0]
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_fclk_i
+set_instance_assignment -name IO_STANDARD LVDS -to adc0_lclk_i
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc0_pd_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc0_spi_csn_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc0_spi_resetn_o
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dA_i[3]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dA_i[2]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dA_i[1]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dA_i[0]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dB_i[3]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dB_i[2]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dB_i[1]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_dB_i[0]
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_fclk_i
+set_instance_assignment -name IO_STANDARD LVDS -to adc1_lclk_i
+set_instance_assignment -name IO_STANDARD LVDS -to sys_clock_i
+set_instance_assignment -name IO_STANDARD LVDS -to systrig_i
+set_instance_assignment -name IO_STANDARD LVDS -to systrig_o
+set_instance_assignment -name IO_STANDARD LVDS -to sync_i
+set_instance_assignment -name IO_STANDARD "1.8 V" -to usb_uart_rx_i
+set_instance_assignment -name IO_STANDARD "1.8 V" -to usb_uart_tx_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc1_pd_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc1_spi_csn_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc1_spi_resetn_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to board_clock_i
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gpio_sas_io[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gpio_sas_io[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gpio_sas_io[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gpio_sas_io[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to gpio_sas_io
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc0_spi_sclk_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc0_spi_sdata_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to pll_intrpt_i
+set_instance_assignment -name IO_STANDARD "1.8 V" -to pll_sda_io
+set_instance_assignment -name IO_STANDARD "1.8 V" -to usb_uart_cts_i
+set_instance_assignment -name IO_STANDARD "1.8 V" -to usb_uart_rts_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc1_spi_sclk_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to adc1_spi_sdata_o
+set_instance_assignment -name IO_STANDARD "1.8 V" -to gpio_board_io[2]
+set_instance_assignment -name IO_STANDARD "1.8 V" -to gpio_board_io[3]
+set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.1V
+set_global_assignment -name VCCPGM_USER_VOLTAGE 3.3V
+set_global_assignment -name VCCBAT_USER_VOLTAGE 2.5V
+set_global_assignment -name VCCE_GXBL_USER_VOLTAGE 1.1V
+set_global_assignment -name VCCE_GXBR_USER_VOLTAGE 1.1V
+set_global_assignment -name VCCL_GXBL_USER_VOLTAGE 1.1V
+set_global_assignment -name VCCL_GXBR_USER_VOLTAGE 1.1V
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to gpio_board_io[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to gpio_board_io[5]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to gpio_board_io[6]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to gpio_board_io[5]
+set_global_assignment -name IP_SEARCH_PATHS "c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl\\ip_blocks\\chipid;c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl\\ip_blocks\\pll_block_1;c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl\\ip_blocks"
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name USE_SIGNALTAP_FILE ../signal_tap/tap_adc_data.stp
+set_location_assignment PIN_B7 -to pll_scl_io
+set_instance_assignment -name IO_STANDARD "1.8 V" -to pll_scl_io
+set_instance_assignment -name IO_STANDARD "2.5 V" -to biastee_sel_o[5]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to biastee_sel_o[6]
+set_global_assignment -name SEARCH_PATH "c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl\\ip_blocks\\serial_flash_loader\\synthesis"
+set_global_assignment -name SEARCH_PATH "c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl\\ip_blocks"
+set_global_assignment -name SEARCH_PATH "c:\\users\\eric\\desktop\\projects\\greenland_lowthreshold_system\\flower-board-firmware\\rtl"
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X1"
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_global_assignment -name STRATIXII_CONFIGURATION_DEVICE EPCQ64A
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN ON
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name ACTIVE_SERIAL_CLOCK FREQ_100MHZ
+set_global_assignment -name VERILOG_FILE ../rtl/remote_firmware_update/serial_flash/synthesis/serial_flash.v
+set_global_assignment -name QIP_FILE ../rtl/remote_firmware_update/serial_flash/synthesis/serial_flash.qip
+set_global_assignment -name QIP_FILE ../rtl/remote_firmware_update/remote_update/remote_update/synthesis/remote_update.qip
+set_global_assignment -name QIP_FILE ../rtl/remote_firmware_update/remote_update/epcqio_block/synthesis/epcqio_block.qip
+set_global_assignment -name QIP_FILE ../rtl/remote_firmware_update/remote_update_writeFIFO.qip
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/EPCQ_read_buffer.vhd
+set_global_assignment -name QIP_FILE ../rtl/remote_firmware_update/EPCQ_read_buffer.qip
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/reset_block.vhd
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/remote_update_writeFIFO_block.vhd
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/remote_update_control.vhd
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/remote_firmware_update_top.vhd
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/epcq256_control.vhd
+set_global_assignment -name VERILOG_FILE ../rtl/verilog_lib/signal_sync.v
+set_global_assignment -name VERILOG_FILE ../rtl/verilog_lib/flag_sync.v
+set_global_assignment -name SDC_FILE timing_constraints.sdc
+set_global_assignment -name VHDL_FILE ../rtl/adc_receiver.vhd
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/rxserdes.qip
+set_global_assignment -name VHDL_FILE "../rtl/flower-top.vhd"
+set_global_assignment -name VHDL_FILE ../rtl/i2c_master.vhd
+set_global_assignment -name VHDL_FILE ../rtl/spi_slave.vhd
+set_global_assignment -name VHDL_FILE ../rtl/slow_clocks.vhd
+set_global_assignment -name VHDL_FILE ../rtl/clock_manager.vhd
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/pll_block_1.qip
+set_global_assignment -name VHDL_FILE ../rtl/reset_and_startup.vhd
+set_global_assignment -name VHDL_FILE ../rtl/defs.vhd
+set_global_assignment -name VHDL_FILE ../rtl/readout_controller.vhd
+set_global_assignment -name VHDL_FILE ../rtl/cpu_interface.vhd
+set_global_assignment -name VHDL_FILE ../rtl/registers.vhd
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/ChipID.qip
+set_global_assignment -name VHDL_FILE ../rtl/spi_to_i2c_bridge.vhd
+set_global_assignment -name SIGNALTAP_FILE ../signal_tap/tap_i2c_bridge.stp
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/pll_block_2.qip
+set_global_assignment -name VHDL_FILE ../rtl/spi_write.vhd
+set_global_assignment -name VHDL_FILE ../rtl/adc_controller.vhd
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/rx_fifo.qip
+set_global_assignment -name SIGNALTAP_FILE ../signal_tap/tap_adc_data.stp
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/data_ram.qip
+set_global_assignment -name VHDL_FILE ../rtl/data_manager_simple.vhd
+set_global_assignment -name VHDL_FILE ../rtl/pretrigger_window.vhd
+set_global_assignment -name VHDL_FILE ../rtl/calpulse.vhd
+set_global_assignment -name QIP_FILE ../rtl/ip_blocks/DDRout.qip
+set_global_assignment -name VHDL_FILE ../rtl/remote_firmware_update/epcq64_control.vhd
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
