@@ -9,6 +9,11 @@ sig_tap/**
 **.pof
 **.sof
 **.rpd
+**.jic
+**.nlv
+**.setup
+**.f
+**.vo
 **.map
 **.spd
 **.sip
