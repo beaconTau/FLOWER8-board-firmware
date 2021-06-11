@@ -215,12 +215,12 @@ begin
         when idle_fromop =>
           if(idle_wait = 2) then
             idle_wait := 0;
-            if(mode4byte='0') then
-              fsm <= start4byte;
-              currcmd <= "101";
-            else
+            --if(mode4byte='0') then
+            --  fsm <= start4byte;
+            --  currcmd <= "101";
+            --else
               fsm <= idle;
-            end if;
+            --end if;
           else
             idle_wait := idle_wait + 1;
             fsm <= idle_fromop;
