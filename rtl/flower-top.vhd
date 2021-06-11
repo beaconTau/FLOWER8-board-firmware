@@ -139,6 +139,8 @@ architecture rtl of flower_top is
 	signal share_asmi_dclk				:	std_logic;
 	signal share_asmi_scein				:  std_logic;
 	signal share_asmi_sdoin				:  std_logic_vector(3 downto 0);	
+	signal serial_flash_asmi_access_grant_int : std_logic;
+	signal serial_flash_asmi_access_req_int  : std_logic;
 	---------------------------------------
 	--//data management signals
 	constant adc_data_parallel_width : integer := 64; --//width of serdes output
@@ -190,11 +192,25 @@ begin
 		noe_in 			=> '0',
 		dclk_in			=> share_asmi_dclk,
 		ncso_in			=> share_asmi_scein, 
-		asmi_access_granted => '1', --danger danger!! Have '1' here temporarily to allow jtag flashing
-		asmi_access_request => open,
+		asmi_access_granted => serial_flash_asmi_access_grant_int,
+		asmi_access_request => serial_flash_asmi_access_req_int,
 		data_in	      => share_asmi_sdoin,
 		data_oe 			=> share_asmi_dataoe,
 		data_out			=> share_asmi_dataout);
+	proc_share_asmi : process(clock_internal_10MHz_loc)
+	begin
+		if rising_edge(clock_internal_10MHz_loc) then
+			if registers(110)(0) = '1' then --remote upgrade block gets access to asmi interface
+				serial_flash_asmi_access_grant_int<= '0';
+			elsif serial_flash_asmi_access_req_int = '1' then
+				serial_flash_asmi_access_grant_int <= '1';
+			elsif serial_flash_asmi_access_req_int = '0' then
+				serial_flash_asmi_access_grant_int <= '0';
+			else
+				serial_flash_asmi_access_grant_int <= '0';
+			end if;
+		end if;
+	end process;
 	--///////////////////////////////////////
 	-----------------------------------------
 	--//clocks
@@ -212,9 +228,6 @@ begin
 		CLK_10Hz_o		=> clock_internal_10Hz,
 		CLK_1kHz_o		=> clock_internal_1kHz,	
 		CLK_100kHz_o	=> clock_internal_100kHz,
---		refresh_100Hz_o 	=> clock_rfrsh_pulse_100Hz,
---		refresh_1Hz_o		=> clock_rfrsh_pulse_1Hz,
---		refresh_100mHz_o  => clock_rfrsh_pulse_100mHz, --//scaler refresh clock
 		fpga_pll1lock_o => pll1_internal_loc,
 		fpga_pll2lock_o => pll2_internal_loc);
 	--///////////////////////////////////////
@@ -256,7 +269,7 @@ begin
 		current_ram_adr_data_surface_i=> (others=>(others=>'0')), 
 		remote_upgrade_data_i			=> x"00" & remote_upgrade_data, --remote_upgrade_data,	
 		remote_upgrade_epcq_data_i		=> remote_upgrade_epcq_data, --remote_upgrade_epcq_data,
-		remote_upgrade_status_i			=> remote_upgrade_status, --remote_upgrade_status,
+		remote_upgrade_status_i			=> "0000000" & serial_flash_asmi_access_grant_int & remote_upgrade_status(15 downto 0), --remote_upgrade_status,
 		pps_timestamp_to_read_i			=> (others=>'0'), --pps_timestamp_to_read,
 		-----------------------------
 		write_reg_i		=> spi_data_pkt_32bit,
