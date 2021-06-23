@@ -62,7 +62,7 @@ Port(
 	systrig_i			: in	std_logic;
 	systrig_o			: out	std_logic;
 	sync_i				: in	std_logic;
-	gpio_sas_io			: inout std_logic_vector(3 downto 0);
+	gpio_sas_io			: inout std_logic_vector(3 downto 0); --gpio(0) is the pps
 	gpio_board_io		: inout std_logic_vector(6 downto 0); --gpios 5 & 6 are on-board LEDs
 	biastee_sel_o		: out std_logic_vector(7 downto 0);	
 	sma_aux0_io			: inout std_logic;
@@ -83,10 +83,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"00";
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"03";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"04";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"6"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"0B";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"16";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -176,7 +176,7 @@ architecture rtl of flower_top is
 begin
 
 	--//test LED
-	gpio_board_io(5) <= clock_internal_1Hz;
+	gpio_board_io(5) <= gpio_sas_io(0); --clock_internal_1Hz;
 	gpio_board_io(6) <= clock_internal_10Hz;
 	--///////////////////////////////////////
 	--//resets
@@ -372,7 +372,7 @@ begin
 	port map(
 		rst_i					=> reset_power_on,
 		clk_i					=> clock_internal_10MHz_loc,
-		gate_i					=> '0',
+		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
 		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
 		pps_timestamp_i		  => (others=>'0'),

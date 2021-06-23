@@ -55,9 +55,11 @@ signal streaming_data : streaming_data_array; --pipeline data
 
 signal channel_trig_hi		: std_logic_vector(3 downto 0); --for hi/lo coinc
 signal channel_trig_lo		: std_logic_vector(3 downto 0); --for hi/lo coinc
+signal channel_servo_hi		: std_logic_vector(3 downto 0); --for hi/lo coinc
+signal channel_servo_lo		: std_logic_vector(3 downto 0); --for hi/lo coinc
 signal channel_trig_reg		: threshold_array;              --for coincidenc'ing
 signal channel_servo_reg	: threshold_array;              --for coincidenc'ing
-signal channel_servo			: std_logic_vector(3 downto 0);
+
 signal trig_clear				: std_logic_vector(3 downto 0);
 signal servo_clear			: std_logic_vector(3 downto 0);
 signal trig_counter			: threshold_array; --/not a threshold, but data type works
@@ -67,6 +69,10 @@ signal trig_array_for_scalers : std_logic_vector(11 downto 0); --//on clk_data_i
 
 signal coincidence_trigger_reg : std_logic_vector(1 downto 0);
 signal coincidence_trigger : std_logic; --actual trigger, one clk_data_i cycle
+signal coincidence_servo_reg : std_logic_vector(1 downto 0);
+signal coincidence_servo : std_logic; --one clk_data_i period
+
+
 signal coinc_window_int	: std_logic_vector(7 downto 0) := x"02"; --//num of clk_data_i periods
 constant baseline				: std_logic_vector(7 downto 0) := x"80";
 
@@ -143,17 +149,43 @@ for i in 0 to 3 loop
 		elsif trig_clear(i) = '1' then
 				channel_trig_reg(i)(0) <= '0';
 		end if;
-		--servo trig
-		if streaming_data(i)(63 downto 56) < servo_threshold_int(i) or 
-			streaming_data(i)(55 downto 48) < servo_threshold_int(i) or 
-			streaming_data(i)(47 downto 40) < servo_threshold_int(i) or 
-			streaming_data(i)(39 downto 32) < servo_threshold_int(i)  then
-				--
+		--------------------
+		--servo thresholding
+		--lo-side threshold: take 4 samples + 2 sample overlap. This is a ~13 ns window, or thereabouts
+		if streaming_data(i)(63 downto 56) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data(i)(55 downto 48) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data(i)(47 downto 40) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data(i)(39 downto 32) <= (baseline - servo_threshold_int(i)) or
+			streaming_data(i)(31 downto 24) <= (baseline - servo_threshold_int(i)) or
+			streaming_data(i)(23 downto 16) <= (baseline - servo_threshold_int(i)) then
+			--
+			channel_servo_lo(i) <= '1';
+		else
+			channel_servo_lo(i) <= '0';
+		end if;
+		--same for hi
+		if streaming_data(i)(63 downto 56) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data(i)(55 downto 48) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data(i)(47 downto 40) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data(i)(39 downto 32) >= (baseline + servo_threshold_int(i)) or
+			streaming_data(i)(31 downto 24) >= (baseline + servo_threshold_int(i)) or
+			streaming_data(i)(23 downto 16) >= (baseline + servo_threshold_int(i)) then
+			--
+			channel_servo_hi(i) <= '1';
+		else
+			channel_servo_hi(i) <= '0';
+		end if;
+		--single-channel coinc:
+		if channel_servo_lo(i) = '1' and channel_servo_hi(i) = '1' and vppmode_int = '1' then
 				channel_servo_reg(i)(0) <= '1';
+		elsif channel_servo_lo(i) = '1' and vppmode_int = '0' then
+				channel_servo_reg(i)(0) <= '1';
+		--only clear on servo_clear input
 		elsif servo_clear(i) = '1' then
 				channel_servo_reg(i)(0) <= '0';
-				--
 		end if;
+		----------------------------------------------
+	
 	end if;
 end loop;
 end process;
@@ -163,11 +195,16 @@ proc_coinc_trig : process(rst_i, clk_data_i)
 begin
 	if rst_i = '1' then
 		coincidence_trigger_reg <= "00";
-		coincidence_trigger <= '0';
+		coincidence_trigger <= '0'; -- the trigger
+
+		coincidence_servo_reg <= "00";
+		coincidence_servo <= '0';  --the servo trigger
 
 		for i in 0 to 3 loop
 			trig_clear(i) <= '0';
 			trig_counter(i) <= (others=>'0');
+			servo_clear(i) <= '0';
+			servo_counter(i) <= (others=>'0');
 		end loop;
 		
 	elsif rising_edge(clk_data_i) then
@@ -215,6 +252,23 @@ begin
 			coincidence_trigger <= '1';
 		else
 			coincidence_trigger <= '0';
+		end if;
+		----------------------servo----------------------------------------------------------------------
+		--//coinc requirement. Note that 1 channel required for trigger when 'coinc_require_int' == 0
+		if to_integer(unsigned(channel_servo_reg(0))) + to_integer(unsigned(channel_servo_reg(1))) + 
+			to_integer(unsigned(channel_servo_reg(2))) + to_integer(unsigned(channel_servo_reg(3))) > to_integer(unsigned(coinc_require_int)) then
+			
+			coincidence_servo_reg(0) <= '1';
+		
+		else
+			coincidence_servo_reg(0) <= '0';
+		end if;
+		
+		coincidence_servo_reg(1) <= coincidence_servo_reg(0); --dumb way to trigger on "01", rising edge
+		if coincidence_servo_reg = "01" then
+			coincidence_servo <= '1';
+		else
+			coincidence_servo <= '0';
 		end if;
 	end if;
 end process;
@@ -265,8 +319,10 @@ xVPPMODESYNC : signal_sync
 	SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_param_reg)))(16), --vppmode
 	SignalOut_clkB	=> vppmode_int);
 --------------
-trig_array_for_scalers <= "000" & servo_clear(3) & servo_clear(2) & servo_clear(1) & servo_clear(0)
-						& trig_clear(3) & trig_clear(2) & trig_clear(1) & trig_clear(0) & coincidence_trigger;
+trig_array_for_scalers <= "00" & servo_clear(3) & servo_clear(2) &
+									servo_clear(1) & servo_clear(0) & coincidence_servo &
+									trig_clear(3) & trig_clear(2) & trig_clear(1) & 
+									trig_clear(0) & coincidence_trigger;
 --------------
 TrigToScalers	:	 for i in 0 to 11 generate
 	xTRIGSYNC : flag_sync

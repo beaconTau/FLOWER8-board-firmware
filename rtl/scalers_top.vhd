@@ -41,7 +41,7 @@ architecture rtl of scalers_top is
 constant num_scalers : integer := 64;
 type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
 
-signal internal_scaler_array : scaler_array_type;
+signal internal_scaler_array : scaler_array_type := (others=>(others=>'0'));
 signal latched_scaler_array : scaler_array_type; --//assigned after refresh pulse
 
 	--//need to create a single pulse every Hz with width of 10 MHz clock period
@@ -69,6 +69,13 @@ begin
 -------------------------------------------------------------------------------
 --proc_assign_scalers_to_metadata : running_scalers_o <= internal_scaler_array(32) & internal_scaler_array(0);
 -------------------------------------------------------------------------------
+--//scaler 63 is the `scaler pps'
+proc_scaler_pps : process(clk_i, refresh_clk_1Hz)
+begin
+	if rising_edge(clk_i) and refresh_clk_1Hz = '1' then
+		internal_scaler_array(63) <= internal_scaler_array(63) + 1;
+	end if;
+end process;
 --//scalers 0-11
 CoincTrigScalers1Hz : for i in 0 to 11 generate
 	xCOINC1Hz : scaler
@@ -80,6 +87,16 @@ CoincTrigScalers1Hz : for i in 0 to 11 generate
 		scaler_o => internal_scaler_array(i));
 end generate;
 --//scalers 12-23
+CoincTrigScalers1HzGated : for i in 0 to 11 generate
+	xCOINC1Hz : scaler
+	port map(
+		rst_i => rst_i,
+		clk_i => clk_i,
+		refresh_i => refresh_clk_1Hz,
+		count_i => coinc_trig_bits_i(i) and gate_i,
+		scaler_o => internal_scaler_array(i+12));
+end generate;
+--//scalers 24-35
 CoincTrigScalers100Hz : for i in 0 to 11 generate
 	xCOINC100Hz : scaler
 	port map(
@@ -87,7 +104,7 @@ CoincTrigScalers100Hz : for i in 0 to 11 generate
 		clk_i => clk_i,
 		refresh_i => refresh_clk_100Hz,
 		count_i => coinc_trig_bits_i(i),
-		scaler_o => internal_scaler_array(i+12));
+		scaler_o => internal_scaler_array(i+24));
 end generate;
 -------------------------------------		
 proc_save_scalers : process(rst_i, clk_i, reg_i)
