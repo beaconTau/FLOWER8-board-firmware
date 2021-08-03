@@ -52,7 +52,7 @@ signal latched_scaler_array : scaler_array_type; --//assigned after refresh puls
 	signal refresh_clk_1Hz				:	std_logic := '0';
 	signal refresh_clk_100mHz			:	std_logic := '0';
 	--//for 10 MHz
-	constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"0002710"; --this is 1KHz;  
+	constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";   
 	--constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
 	constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"0989680";  
 	constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"5F5E100";  	
@@ -176,6 +176,17 @@ begin
 				scaler_to_read_o <= latched_scaler_array(51) & latched_scaler_array(50);	
 			when x"1A" =>
 				scaler_to_read_o <= latched_scaler_array(53) & latched_scaler_array(52);				
+			when x"1B" =>
+				scaler_to_read_o <= latched_scaler_array(55) & latched_scaler_array(54);				
+			when x"1C" =>
+				scaler_to_read_o <= latched_scaler_array(57) & latched_scaler_array(56);				
+			when x"1D" =>
+				scaler_to_read_o <= latched_scaler_array(59) & latched_scaler_array(58);				
+			when x"1E" =>
+				scaler_to_read_o <= latched_scaler_array(61) & latched_scaler_array(60);				
+			when x"1F" =>
+				scaler_to_read_o <= latched_scaler_array(63) & latched_scaler_array(62);				
+			--
 			when others =>
 				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
 		end case;

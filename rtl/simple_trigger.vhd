@@ -47,11 +47,12 @@ architecture rtl of simple_trigger is
 type threshold_array is array (3 downto 0) of std_logic_vector(7 downto 0);
 signal trig_threshold_int	: threshold_array;
 signal servo_threshold_int	: threshold_array;
-signal coinc_require_int	: std_logic_vector(1 downto 0);
+signal coinc_require_int	: std_logic_vector(2 downto 0);
 signal vppmode_int			: std_logic;
 
 type streaming_data_array is array(3 downto 0) of std_logic_vector(63 downto 0);
 signal streaming_data : streaming_data_array; --pipeline data
+signal streaming_data_2 : streaming_data_array;
 
 signal channel_trig_hi		: std_logic_vector(3 downto 0); --for hi/lo coinc
 signal channel_trig_lo		: std_logic_vector(3 downto 0); --for hi/lo coinc
@@ -74,7 +75,7 @@ signal coincidence_servo : std_logic; --one clk_data_i period
 
 
 signal coinc_window_int	: std_logic_vector(7 downto 0) := x"02"; --//num of clk_data_i periods
-constant baseline				: std_logic_vector(7 downto 0) := x"80";
+constant baseline			: std_logic_vector(7 downto 0) := x"80";
 
 --------------
 component signal_sync is
@@ -103,6 +104,12 @@ begin
 		streaming_data(1)(63 downto 0) <= streaming_data(1)(31 downto 0) & ch1_data_i;
 		streaming_data(2)(63 downto 0) <= streaming_data(2)(31 downto 0) & ch2_data_i;
 		streaming_data(3)(63 downto 0) <= streaming_data(3)(31 downto 0) & ch3_data_i;
+		--second streaming array for pipelining
+		streaming_data_2(0) <= streaming_data(0);
+		streaming_data_2(1) <= streaming_data(1);
+		streaming_data_2(2) <= streaming_data(2);
+		streaming_data_2(3) <= streaming_data(3);
+		
 	end if;
 end process;
 ------------------------------------------------
@@ -150,26 +157,26 @@ for i in 0 to 3 loop
 				channel_trig_reg(i)(0) <= '0';
 		end if;
 		--------------------
-		--servo thresholding
+		--servo thresholding, using `streaming_data_2'
 		--lo-side threshold: take 4 samples + 2 sample overlap. This is a ~13 ns window, or thereabouts
-		if streaming_data(i)(63 downto 56) <= (baseline - servo_threshold_int(i)) or 
-			streaming_data(i)(55 downto 48) <= (baseline - servo_threshold_int(i)) or 
-			streaming_data(i)(47 downto 40) <= (baseline - servo_threshold_int(i)) or 
-			streaming_data(i)(39 downto 32) <= (baseline - servo_threshold_int(i)) or
-			streaming_data(i)(31 downto 24) <= (baseline - servo_threshold_int(i)) or
-			streaming_data(i)(23 downto 16) <= (baseline - servo_threshold_int(i)) then
+		if streaming_data_2(i)(63 downto 56) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data_2(i)(55 downto 48) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data_2(i)(47 downto 40) <= (baseline - servo_threshold_int(i)) or 
+			streaming_data_2(i)(39 downto 32) <= (baseline - servo_threshold_int(i)) or
+			streaming_data_2(i)(31 downto 24) <= (baseline - servo_threshold_int(i)) or
+			streaming_data_2(i)(23 downto 16) <= (baseline - servo_threshold_int(i)) then
 			--
 			channel_servo_lo(i) <= '1';
 		else
 			channel_servo_lo(i) <= '0';
 		end if;
 		--same for hi
-		if streaming_data(i)(63 downto 56) >= (baseline + servo_threshold_int(i)) or 
-			streaming_data(i)(55 downto 48) >= (baseline + servo_threshold_int(i)) or 
-			streaming_data(i)(47 downto 40) >= (baseline + servo_threshold_int(i)) or 
-			streaming_data(i)(39 downto 32) >= (baseline + servo_threshold_int(i)) or
-			streaming_data(i)(31 downto 24) >= (baseline + servo_threshold_int(i)) or
-			streaming_data(i)(23 downto 16) >= (baseline + servo_threshold_int(i)) then
+		if streaming_data_2(i)(63 downto 56) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data_2(i)(55 downto 48) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data_2(i)(47 downto 40) >= (baseline + servo_threshold_int(i)) or 
+			streaming_data_2(i)(39 downto 32) >= (baseline + servo_threshold_int(i)) or
+			streaming_data_2(i)(31 downto 24) >= (baseline + servo_threshold_int(i)) or
+			streaming_data_2(i)(23 downto 16) >= (baseline + servo_threshold_int(i)) then
 			--
 			channel_servo_hi(i) <= '1';
 		else
@@ -296,7 +303,7 @@ SERVO_THRESHOLDS : for j in 0 to 3 generate
 	end generate;
 end generate;
 --------------
-COINCREQ : for i in 0 to 1 generate
+COINCREQ : for i in 0 to 2 generate
 	xCOINCREQSYNC : signal_sync
 		port map(
 		clkA				=> clk_i,
