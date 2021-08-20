@@ -215,7 +215,7 @@ begin
 		rx_data_shift_array_0_a <= (others=>'0');
 		rx_data_shift_array_1_a <= (others=>'0');
 		
-	elsif rising_edge(clk_data_i) and rx_fifo_usedwrd_i > 3 then --//arbitrary -- FIFO is 8 words deep
+	elsif rising_edge(clk_data_i) and rx_fifo_usedwrd_i > 4 then --//arbitraryish -- FIFO is 8 words deep
 
 		rx_fifo_rd_en_o <= '1';
 		internal_data_good <='1';
@@ -314,10 +314,11 @@ begin
 		--rx_data_pipe0_b <= rx_data_pipe0_a;
 		--rx_data_pipe1_b <= rx_data_pipe1_a;
 		---------------------------------------
-		rx_data_shift_array_0_a <= rx_data_shift_array_0_a(63 downto 0) & rx_data_pipe0_a;
-		rx_data_shift_array_1_a <= rx_data_shift_array_1_a(63 downto 0) & rx_data_pipe1_a;
-		rx_data_pipe0_a <= rx_adc0_data_i;
-		rx_data_pipe1_a <= rx_adc1_data_i;
+		rx_data_shift_array_0_a <= rx_data_shift_array_0_a(63 downto 0) & rx_adc0_data_i; --rx_data_pipe0_a;
+		rx_data_shift_array_1_a <= rx_data_shift_array_1_a(63 downto 0) & rx_adc1_data_i; --rx_data_pipe1_a;
+		-----removed this pipelining stage 8/20
+		--rx_data_pipe0_a <= rx_adc0_data_i; 
+		--rx_data_pipe1_a <= rx_adc1_data_i;
 		
 	--//no-good data condition:
 	elsif rising_edge(clk_data_i) then 

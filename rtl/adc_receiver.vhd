@@ -88,7 +88,7 @@ port map(
 	rx_out => internal_adc_parallel_data,
 	rx_outclock => internal_serdes_outclk); --//LVDS_bit_clock/4 -- 118MHz
 
---//FIFO, 8-words deep	
+--//FIFO, 8-words deep 8/19
 xRXFIFO : entity work.rx_fifo(syn)
 port map(
 	aclr			=> rst_i or (not internal_rx_dat_valid(1)),
@@ -101,7 +101,7 @@ port map(
 	rdusedw 		=> rx_fifo_rdusedw_o,	
 	rdempty => open, wrfull => open, wrusedw => open);
 	
---// write ADC data to fifo
+--// write ADC data to fifo, needs commanding from sw to begin
 proc_write_fifo : process(internal_serdes_outclk, internal_rx_dat_valid)
 begin	
 	if internal_rx_dat_valid(0) = '0'  then

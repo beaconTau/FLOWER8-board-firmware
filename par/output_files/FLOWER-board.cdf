@@ -4,7 +4,7 @@ JedecChain;
 	DefaultMfr(6E);
 
 	P ActionCode(Cfg)
-		Device PartName(5CEBA5F23) Path("C:/Users/eric/Desktop/projects/greenland_lowthreshold_system/FLOWER-board-firmware/par/output_files/") File("FLOWER-board.sof") MfrSpec(OpMask(1));
+		Device PartName(5CEBA5F23) Path("C:/Users/eric/Desktop/projects/FLOWER-board-firmware/par/output_files/") File("FLOWER-board.sof") MfrSpec(OpMask(1));
 
 ChainEnd;
 

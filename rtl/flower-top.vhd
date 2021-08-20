@@ -156,6 +156,7 @@ architecture rtl of flower_top is
 	signal ch3_data : std_logic_vector(31 downto 0);
 	signal coinc_trig_scaler_bits : std_logic_vector(11 downto 0);
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
+	signal coinc_trig_internal : std_logic;
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
 	---------------------------------------
@@ -353,7 +354,8 @@ begin
 		rx_adc_data_o 		=> adc1_data);
 	--///////////////////////////////////////	
 	-----------------------------------------
-	systrig_o <= coinc_trig_scaler_bits(0); 
+	systrig_o <= coinc_trig_internal; 
+	sma_aux0_io <= coinc_trig_internal; 
 	--
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
@@ -366,7 +368,7 @@ begin
 		ch2_data_i	=> ch2_data, 
 		ch3_data_i	=> ch3_data,
 		trig_bits_o => coinc_trig_scaler_bits,
-		coinc_trig_o=> open);
+		coinc_trig_o=> coinc_trig_internal);
 	-----------------------------------------
 	xSCALERS : entity work.scalers_top
 	port map(
