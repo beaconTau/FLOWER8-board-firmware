@@ -62,6 +62,9 @@ entity adc_controller is
 		rx_adc1_data_i		:  in  std_logic_vector(63 downto 0);
 		rx_fifo_rd_en_o   :	out std_logic;
 		rx_fifo_usedwrd_i	:	in	 std_logic_vector(2 downto 0);
+		--//write ram control from data manager
+		ram_write_en_i 	: in std_logic;
+		ram_write_adr_i	: in std_logic_vector(9 downto 0);
 		--//output wfm data
 		adc_ram_data_o		:  out RAM_CHUNKED_DATA_TYPE; --//data in RAM
 		ch0_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
@@ -120,8 +123,8 @@ signal internal_data_good : std_logic;
 signal internal_ram_read_en : std_logic_vector(1 downto 0) := (others=>'0');
 signal internal_ram_read_clk_reg	: std_logic_vector(4 downto 0) := (others=>'0');
 signal internal_ram_read_adr : std_logic_vector(9 downto 0);
-signal internal_ram_write_adr : std_logic_vector(9 downto 0) := (others=>'0');
-signal internal_ram_write_en : std_logic := '0';
+--signal internal_ram_write_adr : std_logic_vector(9 downto 0) := (others=>'0');
+--signal internal_ram_write_en : std_logic := '0';
 
 constant offset : integer := 64; -- array offset for bit-shift operation
 constant sample_align_offset : integer := 16; --array offset for adc-to-adc sample alignment
@@ -400,20 +403,21 @@ ch1_datastream_o <= rx_data_aligned_ch1;
 ch2_datastream_o <= rx_data_aligned_ch2;
 ch3_datastream_o <= rx_data_aligned_ch3;
 --////////////////////////////////////////////////////////////////////////
-proc_simple_sw_trigger : process(rst_i, clk_data_i)
-begin
-	if rst_i = '1' then
-		internal_ram_write_adr <= (others=>'0');
-		internal_ram_write_en <= '0';
-	--//software trigger
-	elsif rising_edge(clk_data_i) and registers_i(to_integer(unsigned(software_trigger_reg_adr)))(0) = '1' then
-		internal_ram_write_adr <= (others=>'1');
-		internal_ram_write_en <= '0';
-	elsif rising_edge(clk_data_i) and internal_data_good = '1' then
-		internal_ram_write_adr <= internal_ram_write_adr + 1;
-		internal_ram_write_en <= '1';
-	end if;
-end process;
+----MOVED RAM WRITING to data_manager.vhd 8.22/2021
+--proc_simple_sw_trigger : process(rst_i, clk_data_i)
+--begin
+--	if rst_i = '1' then
+--		internal_ram_write_adr <= (others=>'0');
+--		internal_ram_write_en <= '0';
+--	--//software trigger
+--	elsif rising_edge(clk_data_i) and registers_i(to_integer(unsigned(software_trigger_reg_adr)))(0) = '1' then
+--		internal_ram_write_adr <= (others=>'1');
+--		internal_ram_write_en <= '0';
+--	elsif rising_edge(clk_data_i) and internal_data_good = '1' then
+--		internal_ram_write_adr <= internal_ram_write_adr + 1;
+--		internal_ram_write_en <= '1';
+--	end if;
+--end process;
 --////////////////////////////////////////////////////////////////////////
 proc_assign_rd_en : process(registers_i(to_integer(unsigned(ram_select_reg_adr)))(7 downto 0))
 begin
@@ -497,8 +501,8 @@ xRAM0 : entity work.data_ram --ADC0
 	port map(
 		out_aclr	=> rst_i,
 		data 		=> internal_data_0,
-		wraddress=> internal_ram_write_adr,
-		wren		=> internal_ram_write_en,
+		wraddress=> ram_write_adr_i, --internal_ram_write_adr,
+		wren		=> ram_write_en_i, --internal_ram_write_en,
 		rdaddress=> registers_i(to_integer(unsigned(ram_read_adr_reg_adr)))(9 downto 0),
 		rden		=> internal_ram_read_en(0),
 		inclock	=> clk_data_i,
@@ -508,8 +512,8 @@ xRAM1 : entity work.data_ram --ADC1
 	port map(
 		out_aclr	=> rst_i,
 		data 		=> internal_data_1,
-		wraddress=> internal_ram_write_adr,
-		wren		=> internal_ram_write_en,
+		wraddress=> ram_write_adr_i, --internal_ram_write_adr,
+		wren		=> ram_write_en_i, --internal_ram_write_en,
 		rdaddress=> registers_i(to_integer(unsigned(ram_read_adr_reg_adr)))(9 downto 0),
 		rden		=> internal_ram_read_en(1),
 		inclock	=> clk_data_i,

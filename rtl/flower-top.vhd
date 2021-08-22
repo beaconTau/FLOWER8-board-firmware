@@ -83,10 +83,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"00";
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"05";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"06";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
-	constant fw_month			: std_logic_vector(3 downto 0)  := x"7"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"11";
+	constant fw_month			: std_logic_vector(3 downto 0)  := x"8"; 
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"16";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -159,6 +159,10 @@ architecture rtl of flower_top is
 	signal coinc_trig_internal : std_logic;
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
+	signal event_metadata : event_metadata_type;
+	signal event_manager_status_reg : std_logic_vector(23 downto 0);
+	signal event_ram_write_en : std_logic;
+	signal event_ram_write_address : std_logic_vector(9 downto 0);
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -248,6 +252,23 @@ begin
 		rdout_fpga_data_o		=> readout_data);
 	--///////////////////////////////////////	
 	-----------------------------------------
+	--//EVENT DATA MANAGER
+	xDATA_MANAGER : entity work.data_manager
+	port map(
+		rst_i			=> reset_power_on,
+		clk_i			=> clock_internal_10MHz_loc,
+		clk_data_i	=> clock_internal_core,
+		registers_i	=> registers,
+		coinc_trig_i=> coinc_trig_internal,
+		phase_trig_i=> '0', --doesn't exist yet
+		ext_trig_i	=> '0', --TODO pick SMA, add register enable control
+		pps_i			=> '0', --TODO add register enable control
+		status_reg_o	 => event_manager_status_reg,
+		ram_write_o		 => event_ram_write_en,
+		ram_write_adr_o => event_ram_write_address,	
+		evt_meta_o		 => event_metadata		);
+	--///////////////////////////////////////	
+	-----------------------------------------
 	--//REGISTERS
 	xREGISTERS : entity work.registers_spi
 	port map(
@@ -261,11 +282,11 @@ begin
 		i2c_read_reg_i						=> data_to_read_i2c,
 		fpga_temp_i							=> (others=>'0'), --fpga_temp,
 		scaler_to_read_i 					=> scaler_to_read_int, --scaler_to_read,
-		status_data_manager_i 			=> (others=>'0'), --status_reg_data_manager,
+		status_data_manager_i 			=> event_manager_status_reg,
 		status_data_manager_surface_i	=> (others=>'0'), --status_reg_data_manager_surface,
 		status_data_manager_latched_i => (others=>'0'), --status_reg_latched_data_manager,
 		status_adc_i	 					=> (others=>'0'), --status_reg_adc,
-		event_metadata_i 					=> (others=>(others=>'0')), --event_meta_data,
+		event_metadata_i 					=> event_metadata, --event_meta_data,
 		current_ram_adr_data_i 			=> ram_chunked_data, --ram_data,
 		current_ram_adr_data_surface_i=> (others=>(others=>'0')), 
 		remote_upgrade_data_i			=> x"00" & remote_upgrade_data, --remote_upgrade_data,	
@@ -324,6 +345,8 @@ begin
 		rx_fifo_rd_en_o	=> rx_fifo_rd,
 		rx_fifo_usedwrd_i	=> adc0_fifo_rdusedw,
 		clk_data_i 			=> clock_internal_core,
+		ram_write_en_i 	=> event_ram_write_en,
+		ram_write_adr_i	=> event_ram_write_address,
 		adc_ram_data_o		=> ram_chunked_data,
 		ch0_datastream_o  => ch0_data ,  --to trigger block
 		ch1_datastream_o  => ch1_data ,
