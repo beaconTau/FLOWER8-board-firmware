@@ -269,7 +269,7 @@ begin
 			registers_io(127) <= x"000000"; --//clear the reset register
 			registers_io(126) <= x"000000"; --//clear the event counter reset
 			registers_io(108)(0) <= '0'; --//clear the temp-update register LSB
-			--registers_io(base_adrs_rdout_cntrl+0) <= x"000000"; --//clear the software trigger
+			registers_io(base_adrs_rdout_cntrl+0) <= x"000000"; --//clear the software trigger
 			registers_io(base_adrs_rdout_cntrl+13)<= x"000000"; --//clear the 'buffer clear' register
 			registers_io(base_adrs_adc_cntrl+1)   <= x"000000"; --//clear the DCLK Reset pulse
 			registers_io(40) <= x"000000"; --//clear the update scalers pulse
