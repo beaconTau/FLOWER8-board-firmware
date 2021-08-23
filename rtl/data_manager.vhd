@@ -183,7 +183,7 @@ begin
 		case data_save_state is
 			when idle=>
 				ram_write_o <= '0';
-				ram_write_adr_o <= (others=>'0');
+				ram_write_adr_o <= (others=>'1');
 				internal_write_busy(0) <= '0';
 				internal_buffer_full <= '0';
 				if internal_trig_to_save_data = '1' then
@@ -195,7 +195,7 @@ begin
 			when write_ram=>
 				internal_write_busy(0) <= '1';
 				internal_buffer_full <= '0';
-				if ram_write_adr_o  = maximum_ram_address then --TODO make configurable
+				if ram_write_adr_o  = (maximum_ram_address - 1) then --TODO make configurable
 					ram_write_o <= '0';
 					ram_write_adr_o <= ram_write_adr_o;
 					data_save_state <= buffer_full;
@@ -209,7 +209,7 @@ begin
 				internal_write_busy(0) <= '0';
 				internal_buffer_full <= '1';
 				ram_write_o <= '0';
-				ram_write_adr_o <= (others=>'0');
+				ram_write_adr_o <= ram_write_adr_o;
 				if registers_i(to_integer(unsigned(address_reg_clear_buffer_full )))(0) = '1' then
 					data_save_state <= idle;
 				else

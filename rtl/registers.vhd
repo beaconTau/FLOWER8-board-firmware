@@ -137,7 +137,7 @@ begin
 		registers_io(42) <= x"000000"; --//enable cal pulse([LSB]=1) and set RF switch direction([LSB+1]=1 for cal pulse)   [42]
 		--registers_io(43) <= x"000001"; --//cal pulse pattern, maybe make this configurable? -> probably a timing nightmare since on 250 MHz clock? 
 		
-		--//surface trigger stuff
+		--//OLD surface trigger stuff
 		registers_io(46) <= x"380914"; --//lower byte = vpp threshold ; 
 		registers_io(47) <= x"01000A"; --//
 		registers_io(73) <= x"000000"; --//
@@ -256,7 +256,7 @@ begin
 			--////////////////////////////////////////////////
 			--//update status/system read-only registers
 			registers_io(3) <= scaler_to_read_i;
-			registers_io(7) <= status_data_manager_i(23 downto 5) & status_data_manager_surface_i(0) & status_data_manager_i(3 downto 0); 
+			registers_io(7) <= status_data_manager_i; 
 			registers_io(8) <= status_adc_i; 
 			registers_io(9) <= status_data_manager_latched_i; 
 			--//assign event meta data

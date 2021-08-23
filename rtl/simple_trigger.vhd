@@ -20,6 +20,7 @@ use work.defs.all;
 
 entity simple_trigger is
 generic(
+		ENABLE_COINC_TRIG : std_logic := '1';
 		--//base register for per-channel coincidence thresholds
 		coinc_trig_reg_base	: std_logic_vector(7 downto 0):= x"57";
 		--//reg for coinc trig params
@@ -117,7 +118,7 @@ end process;
 proc_single_channel : process(clk_data_i, rst_i)
 begin
 for i in 0 to 3 loop
-	if rst_i = '1' then
+	if rst_i = '1' or ENABLE_COINC_TRIG = '0' then
 		channel_servo_reg(i) 	<= (others=>'0');
 		channel_trig_reg(i)	 	<= (others=>'0');
 		channel_trig_lo(i) 		<= '0';

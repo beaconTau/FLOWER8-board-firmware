@@ -259,7 +259,7 @@ begin
 		clk_i			=> clock_internal_10MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
-		coinc_trig_i=> coinc_trig_internal,
+		coinc_trig_i=> '0', --coinc_trig_internal,
 		phase_trig_i=> '0', --doesn't exist yet
 		ext_trig_i	=> '0', --TODO pick SMA, add register enable control
 		pps_i			=> '0', --TODO add register enable control
