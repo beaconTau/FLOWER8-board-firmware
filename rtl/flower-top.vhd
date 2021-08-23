@@ -86,7 +86,7 @@ architecture rtl of flower_top is
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"06";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"8"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"16";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"17";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -259,10 +259,10 @@ begin
 		clk_i			=> clock_internal_10MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
-		coinc_trig_i=> '0', --coinc_trig_internal,
+		coinc_trig_i=> coinc_trig_internal,
 		phase_trig_i=> '0', --doesn't exist yet
-		ext_trig_i	=> '0', --TODO pick SMA, add register enable control
-		pps_i			=> '0', --TODO add register enable control
+		ext_trig_i	=> sma_aux1_io, --use SMA1 for ext trig input. Make selectable?
+		pps_i			=> gpio_sas_io(0), 
 		status_reg_o	 => event_manager_status_reg,
 		ram_write_o		 => event_ram_write_en,
 		ram_write_adr_o => event_ram_write_address,	

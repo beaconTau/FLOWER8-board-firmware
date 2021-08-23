@@ -20,6 +20,7 @@ use work.defs.all;
 
 entity data_manager is
 generic(
+		address_trigger_enables : std_logic_vector(7 downto 0) := x"3D";
 		address_reg_sw_trig :  std_logic_vector(7 downto 0):= x"40";
 		address_reg_clear_buffer_full : std_logic_Vector(7 downto 0):= x"4D";
 		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E");
@@ -95,12 +96,12 @@ begin
 		else
 			internal_Sw_trig <= '0';
 		end if;
-		if internal_ext_trig_reg = "01" then	
+		if internal_ext_trig_reg = "01" and registers_i(to_integer(unsigned(address_trigger_enables)))(16) = '1' then	
 			internal_ext_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_ext_trig <= '0';
 		end if;
-		if internal_pps_trig_reg = "01" then	
+		if internal_pps_trig_reg = "01" and registers_i(to_integer(unsigned(address_trigger_enables)))(0) = '1' then	
 			internal_pps_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_pps_trig <= '0';

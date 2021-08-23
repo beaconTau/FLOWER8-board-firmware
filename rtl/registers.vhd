@@ -128,10 +128,10 @@ begin
 		registers_io(40) <= x"000000"; --//update scaler pulse
 		registers_io(41) <= x"000000"; --//scaler-to-read
 		
-		--//trigger channel delays
-		registers_io(61) <= x"000000"; --//delay CH0,1,2
-		registers_io(62) <= x"000000"; --//delay CH3,4,5
-		registers_io(63) <= x"000000"; --//delay CH6,7
+		--//
+		registers_io(61) <= x"000000"; --//FLOWER trigger enables [0]->pps trig [8]->coinc_trig [16]->ext trig enable
+		registers_io(62) <= x"000000"; 
+		registers_io(63) <= x"000000"; 
 		
 		--//electronics cal pulse:
 		registers_io(42) <= x"000000"; --//enable cal pulse([LSB]=1) and set RF switch direction([LSB+1]=1 for cal pulse)   [42]

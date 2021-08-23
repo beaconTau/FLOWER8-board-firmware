@@ -21,6 +21,8 @@ use work.defs.all;
 entity simple_trigger is
 generic(
 		ENABLE_COINC_TRIG : std_logic := '1';
+		--//trigger setting register: coinc trig enable is bit [8]
+		trigger_enable_reg_adr : std_logic_vector(7 downto 0) := x"3D";
 		--//base register for per-channel coincidence thresholds
 		coinc_trig_reg_base	: std_logic_vector(7 downto 0):= x"57";
 		--//reg for coinc trig params
@@ -74,6 +76,7 @@ signal coincidence_trigger : std_logic; --actual trigger, one clk_data_i cycle
 signal coincidence_servo_reg : std_logic_vector(1 downto 0);
 signal coincidence_servo : std_logic; --one clk_data_i period
 
+signal internal_coinc_trig_en : std_logic := '0'; --enable this trigger block from sw
 
 signal coinc_window_int	: std_logic_vector(7 downto 0) := x"02"; --//num of clk_data_i periods
 constant baseline			: std_logic_vector(7 downto 0) := x"80";
@@ -119,6 +122,11 @@ proc_single_channel : process(clk_data_i, rst_i)
 begin
 for i in 0 to 3 loop
 	if rst_i = '1' or ENABLE_COINC_TRIG = '0' then
+		channel_servo_reg(i) 	<= (others=>'0');
+		channel_trig_reg(i)	 	<= (others=>'0');
+		channel_trig_lo(i) 		<= '0';
+		channel_trig_hi(i) 		<= '0';
+	elsif rising_edge(clk_data_i) and internal_coinc_trig_en = '0' then
 		channel_servo_reg(i) 	<= (others=>'0');
 		channel_trig_reg(i)	 	<= (others=>'0');
 		channel_trig_lo(i) 		<= '0';
@@ -341,4 +349,11 @@ TrigToScalers	:	 for i in 0 to 11 generate
 		busy_clkA	=> open,
 		out_clkB		=> trig_bits_o(i));
 end generate TrigToScalers;
+--------------
+xTRIGENABLESYNC : signal_sync
+	port map(
+	clkA				=> clk_i,
+	clkB				=> clk_data_i,
+	SignalIn_clkA	=> registers_i(to_integer(unsigned(trigger_enable_reg_adr)))(8), --overall coinc trig enable bit
+	SignalOut_clkB	=> internal_coinc_trig_en);
 end rtl;
