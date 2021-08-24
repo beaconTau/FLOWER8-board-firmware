@@ -103,7 +103,7 @@ begin
 				--if tx_ack_i = '1' then
 				--	readout_state <= idle_st;
 				--//timeout waiting for an ack:
-				if readout_timeout = x"9" then --//wait 9 clock cycles --TODO make this better..
+				if readout_timeout = x"8" then --//wait 8 clock cycles --TODO make this better..
 					readout_timeout <= (others=>'0');
 					readout_state <= idle_st;
 				else

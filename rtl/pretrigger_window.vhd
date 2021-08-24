@@ -25,7 +25,7 @@ entity pretrigger_window is
 	port(
 		rst_i					:	in	 std_logic;
 		clk_i					:  in	 std_logic;
-		pretrig_sel_i		:	in	 std_logic_vector(2 downto 0);
+		pretrig_sel_i		:	in	 std_logic_vector(3 downto 0);
 		data_i				:	in	 std_logic_vector(data_width-1 downto 0);
 		data_o				:	out std_logic_vector(data_width-1 downto 0));
 	end pretrigger_window;
@@ -46,6 +46,7 @@ architecture rtl of pretrigger_window is
 	signal internal_data_buffer_4 : internal_data_buffer_type;
 	signal internal_data_buffer_5 : internal_data_buffer_type;
 	signal internal_data_buffer_6 : internal_data_buffer_type;
+	signal internal_data_buffer_7 : internal_data_buffer_type;
 
 	signal internal_data_buffer_pickoff_0 : std_logic_vector(data_width-1 downto 0);
 	signal internal_data_buffer_pickoff_1 : std_logic_vector(data_width-1 downto 0);
@@ -55,7 +56,8 @@ architecture rtl of pretrigger_window is
 	signal internal_data_buffer_pickoff_5 : std_logic_vector(data_width-1 downto 0);	
 	signal internal_data_buffer_pickoff_6 : std_logic_vector(data_width-1 downto 0);
 	signal internal_data_buffer_pickoff_7 : std_logic_vector(data_width-1 downto 0);
-	
+	signal internal_data_buffer_pickoff_8 : std_logic_vector(data_width-1 downto 0);
+
 	signal internal_data_pipe : std_logic_vector(data_width-1 downto 0);
 
 begin
@@ -72,6 +74,8 @@ begin
 			internal_data_buffer_4(i) <= (others=>'0');
 			internal_data_buffer_5(i) <= (others=>'0');
 			internal_data_buffer_6(i) <= (others=>'0');
+			internal_data_buffer_7(i) <= (others=>'0');
+
 		end loop;
 		
 		internal_data_buffer_pickoff_0 <= (others=>'0');
@@ -82,11 +86,14 @@ begin
 		internal_data_buffer_pickoff_5 <= (others=>'0');
 		internal_data_buffer_pickoff_6 <= (others=>'0');
 		internal_data_buffer_pickoff_7 <= (others=>'0');
+		internal_data_buffer_pickoff_8 <= (others=>'0');
+
 		internal_data_pipe <= (others=>'0');
 	
 	elsif rising_edge(clk_i) then
 		
 		for i in 1 to 7 loop
+			internal_data_buffer_7(i) <= internal_data_buffer_7(i-1);
 			internal_data_buffer_6(i) <= internal_data_buffer_6(i-1);
 			internal_data_buffer_5(i) <= internal_data_buffer_5(i-1);
 			internal_data_buffer_4(i) <= internal_data_buffer_4(i-1);
@@ -97,6 +104,8 @@ begin
 		end loop;
 		
 		--//keep max fanout to two:
+		internal_data_buffer_pickoff_8  <= internal_data_buffer_7(7);
+		internal_data_buffer_7(0) <= internal_data_buffer_6(7);
 		internal_data_buffer_pickoff_7  <= internal_data_buffer_6(7);
 		internal_data_buffer_6(0) <= internal_data_buffer_5(7);
 		internal_data_buffer_pickoff_6  <= internal_data_buffer_5(7);
@@ -120,27 +129,30 @@ end process;
 proc_assign_data_o : process(rst_i, clk_i, pretrig_sel_i, internal_data_buffer_pickoff_0, internal_data_buffer_pickoff_1,
 										internal_data_buffer_pickoff_2, internal_data_buffer_pickoff_3,
 										internal_data_buffer_pickoff_4, internal_data_buffer_pickoff_5,
-										internal_data_buffer_pickoff_6, internal_data_buffer_pickoff_7)
+										internal_data_buffer_pickoff_6, internal_data_buffer_pickoff_7,
+										internal_data_buffer_pickoff_8)
 begin
 	if rising_edge(clk_i) then
 		case pretrig_sel_i is
 		
-			when "000"=>
+			when "0000"=>
 				data_o <= internal_data_buffer_pickoff_0; --//"0" pre-trigger delay (actually, 1 clk cycle)
-			when "001"=> 
+			when "0001"=> 
 				data_o <= internal_data_buffer_pickoff_1;
-			when "010"=>
+			when "0010"=>
 				data_o <= internal_data_buffer_pickoff_2;
-			when "011"=>
+			when "0011"=>
 				data_o <= internal_data_buffer_pickoff_3;
-			when "100"=>
+			when "0100"=>
 				data_o <= internal_data_buffer_pickoff_4; --//from initial tests on 9/1/2017, '4' seems to be optimal
-			when "101"=>
+			when "0101"=>
 				data_o <= internal_data_buffer_pickoff_5;
-			when "110"=>
+			when "0110"=>
 				data_o <= internal_data_buffer_pickoff_6;
-			when "111"=>
-				data_o <= internal_data_buffer_pickoff_7; --//max pre-trigger delay is 7 blocks 
+			when "0111"=>
+				data_o <= internal_data_buffer_pickoff_7; 
+			when "1000"=>
+				data_o <= internal_data_buffer_pickoff_8; 
 			when others=>
 				data_o <= internal_data_buffer_pickoff_0;
 		end case;

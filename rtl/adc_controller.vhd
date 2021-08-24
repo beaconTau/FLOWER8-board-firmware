@@ -116,7 +116,7 @@ signal internal_bitshift_val_1	: std_logic_vector(2 downto 0);
 signal internal_samplealign_val_0 : std_logic_vector(2 downto 0); --adc0 byteshift
 signal internal_samplealign_val_1 : std_logic_vector(2 downto 0); --adc1 byteshift
 --//pretrigger selection
-signal internal_pretrig_val	: std_logic_vector(2 downto 0); 
+signal internal_pretrig_val	: std_logic_vector(3 downto 0); 
 --pattern indicates 'no good data from ADC'
 constant rx_data_HOLD_VALUE : std_logic_vector(63 downto 0) := x"CECECECECECECECE"; 
 signal internal_data_good : std_logic;
@@ -553,7 +553,7 @@ SAMPLESHIFT_CMD_ADC_0 : for i in 0 to 2 generate
 		SignalIn_clkA	=> registers_i(to_integer(unsigned(adc0_sample_shift_adr)))(i), --bitshift from software
 		SignalOut_clkB	=> internal_samplealign_val_0(i));
 end generate;
-PRETRIG_CMD : for i in 0 to 2 generate
+PRETRIG_CMD : for i in 0 to 3 generate
 	xPRETRIGSYNC : signal_sync
 		port map(
 		clkA				=> clk_i,

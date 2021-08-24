@@ -97,8 +97,8 @@ begin
 		registers_io(base_adrs_rdout_cntrl+1) <= x"000000"; --//data readout channel (65)
 		registers_io(base_adrs_rdout_cntrl+2) <= x"000000"; --//data readout mode- pick between wfms, beams, etc(66) 
 		registers_io(base_adrs_rdout_cntrl+3) <= x"000001"; --//start readout address (67) NOT USED
-		registers_io(base_adrs_rdout_cntrl+4) <= x"000100"; --//x"000600"; --//stop readout address (68) NOT USED
-		registers_io(base_adrs_rdout_cntrl+5) <= x"000000"; --//current/target RAM address [69]
+		registers_io(base_adrs_rdout_cntrl+4) <= x"0003FF"; --//event length address for write RAM [68]
+		registers_io(base_adrs_rdout_cntrl+5) <= x"000000"; --//current/target read RAM address [69]
 		--//////////////////////////////////////////////////////////////////////////////////////////////////
 		--//note differentiating between the following 2 readout types only used when using USB readout
 		--//otherwise only base_adrs_rdout_cntrl+7 is used
@@ -109,7 +109,7 @@ begin
 		registers_io(base_adrs_rdout_cntrl+9)  <= x"000000"; --//data chunk
 		registers_io(base_adrs_rdout_cntrl+10) <= x"00010F"; --//length of data readout (16-bit ADCwords) (74)
 		registers_io(base_adrs_rdout_cntrl+11) <= x"000004"; --//length of register readout (NOT USED, only signal word readouts) (75)
-		registers_io(base_adrs_rdout_cntrl+12) <= x"000404"; --//readout pre-trig window [76]
+		registers_io(base_adrs_rdout_cntrl+12) <= x"000004"; --//readout pre-trig window [76]
 		registers_io(base_adrs_rdout_cntrl+13) <= x"000000"; --//clear data buffer + Reset Buffer Number to 0 [77]
 		registers_io(base_adrs_rdout_cntrl+14) <= x"000000"; --//select readout waveform buffer [78]
 

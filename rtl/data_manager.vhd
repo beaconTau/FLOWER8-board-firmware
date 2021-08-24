@@ -21,7 +21,9 @@ use work.defs.all;
 entity data_manager is
 generic(
 		address_trigger_enables : std_logic_vector(7 downto 0) := x"3D";
+		address_reg_latch_time : std_logic_Vector(7 downto 0) := x"28";
 		address_reg_sw_trig :  std_logic_vector(7 downto 0):= x"40";
+		address_reg_max_ram_address : std_logic_vector(7 downto 0):= x"44";
 		address_reg_clear_buffer_full : std_logic_Vector(7 downto 0):= x"4D";
 		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E");
 
@@ -36,6 +38,7 @@ port(
 		ext_trig_i	:  in		std_logic;
 		pps_i			:	in		std_logic;
 		
+		latched_timestamp_o : buffer std_logic_vector(47 downto 0);
 		status_reg_o : out 	std_logic_vector(23 downto 0);
 		ram_write_o			:	out	std_logic; -- ram sits in ADC controller for now, control signal
 		ram_write_adr_o 	:  buffer   std_logic_vector(9 downto 0);
@@ -64,13 +67,21 @@ signal internal_running_timestamp : std_logic_vector(47 downto 0);
 
 signal internal_write_busy : std_logic_vector(1 downto 0) := "00";
 signal internal_buffer_full : std_logic; --still only a single buffer 
-constant maximum_ram_address : std_logic_vector(9 downto 0) := (others=>'1');
+signal maximum_ram_address : std_logic_vector(9 downto 0) := (others=>'1');
 
 signal internal_metadata_array : event_metadata_type;
+signal internal_latch_time_reg : std_logic_vector(1 downto 0) := "00";
 
 type data_save_state_type is (idle, write_ram, buffer_full);
 signal data_save_state : data_save_state_type;
 --
+component signal_sync is
+port(
+		clkA			: in	std_logic;
+		clkB			: in	std_logic;
+		SignalIn_clkA	: in	std_logic;
+		SignalOut_clkB	: out	std_logic);
+end component;
 ------------------------------------
 begin
 ------------------------------------
@@ -138,6 +149,8 @@ begin
 		internal_event_counter <= (others=>'0');
 		internal_trigger_counter <= (others=>'0');
 		internal_pps_counter <= (others=>'0');
+		latched_timestamp_o <= (others=>'0');
+		internal_latch_time_reg <= (others=>'0');
 	--software reset condition:
 	elsif rising_edge(clk_data_i) and registers_i(to_integer(unsigned(address_reg_reset_evt_counters )))(0) = '1' then
 		internal_event_timestamp_counter <= (others=>'0');
@@ -145,9 +158,12 @@ begin
 		internal_event_counter <= (others=>'0');
 		internal_trigger_counter <= (others=>'0');
 		internal_pps_counter <= (others=>'0');
+		latched_timestamp_o <= (others=>'0');
+		internal_latch_time_reg <= (others=>'0');
 	--incrementationing
 	elsif rising_edge(clk_data_i) then
 		internal_running_timestamp <= internal_running_timestamp + 1;
+		internal_latch_time_reg <= internal_latch_time_reg(0) & registers_i(to_integer(unsigned(address_reg_latch_time)))(0);
 		
 		if internal_trig_to_save_data = '1' then
 			internal_trigger_counter <= internal_trigger_counter + 1;
@@ -163,12 +179,16 @@ begin
 		if internal_write_busy = "01" then
 			internal_event_counter <= internal_event_counter + 1;
 		end if;
+		--latched timestamp
+		if internal_latch_time_reg = "01" then
+			latched_timestamp_o <= internal_running_timestamp;
+		end if;
 		
 	end if;
 end process;	
 ------------------------------------
 --control data RAM and latch metadata
-proc_record_event : process(rst_i, clk_data_i, internal_trig_to_save_data)
+proc_record_event : process(rst_i, clk_data_i, internal_trig_to_save_data, maximum_ram_address)
 begin
 	if rst_i = '1' then
 		ram_write_adr_o <= (others=>'1');
@@ -196,7 +216,7 @@ begin
 			when write_ram=>
 				internal_write_busy(0) <= '1';
 				internal_buffer_full <= '0';
-				if ram_write_adr_o  = (maximum_ram_address - 1) then --TODO make configurable
+				if ram_write_adr_o  = (maximum_ram_address - 1) then 
 					ram_write_o <= '0';
 					ram_write_adr_o <= ram_write_adr_o;
 					data_save_state <= buffer_full;
@@ -217,7 +237,7 @@ begin
 					data_save_state <= buffer_full;
 				end if;
 		end case;
-		
+		------------------------------------
 		--latch event metadata using write busy signaling
 		if internal_write_busy = "01" then
 			internal_metadata_array(0) <= internal_event_counter + 1; -- +1 to maintain same value for event and trig counter
@@ -237,5 +257,13 @@ begin
 		status_reg_o <= x"00" & "0000000" & internal_write_busy(0) & "0000000" & internal_buffer_full;
 	end if;
 end process;
+------------------------------------
+MAX_ADDRESS : for i in 0 to 9 generate
+	xSETMAXADDR : signal_sync
+		port map(
+		clkA	=> clk_i, clkB	=> clk_data_i,
+		SignalIn_clkA	=> registers_i(to_integer(unsigned(address_reg_max_ram_address)))(i), 
+		SignalOut_clkB	=> maximum_ram_address(i));
+end generate;
 ------------------------------------
 end rtl;

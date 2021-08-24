@@ -86,7 +86,7 @@ architecture rtl of flower_top is
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"06";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"8"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"17";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"18";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -163,6 +163,8 @@ architecture rtl of flower_top is
 	signal event_manager_status_reg : std_logic_vector(23 downto 0);
 	signal event_ram_write_en : std_logic;
 	signal event_ram_write_address : std_logic_vector(9 downto 0);
+	--//timestamps
+	signal latched_timestamp : std_logic_Vector(47 downto 0);
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -263,6 +265,7 @@ begin
 		phase_trig_i=> '0', --doesn't exist yet
 		ext_trig_i	=> sma_aux1_io, --use SMA1 for ext trig input. Make selectable?
 		pps_i			=> gpio_sas_io(0), 
+		latched_timestamp_o  => latched_timestamp,
 		status_reg_o	 => event_manager_status_reg,
 		ram_write_o		 => event_ram_write_en,
 		ram_write_adr_o => event_ram_write_address,	
@@ -292,7 +295,7 @@ begin
 		remote_upgrade_data_i			=> x"00" & remote_upgrade_data, --remote_upgrade_data,	
 		remote_upgrade_epcq_data_i		=> remote_upgrade_epcq_data, --remote_upgrade_epcq_data,
 		remote_upgrade_status_i			=> "0000000" & serial_flash_asmi_access_grant_int & remote_upgrade_status(15 downto 0), --remote_upgrade_status,
-		pps_timestamp_to_read_i			=> (others=>'0'), --pps_timestamp_to_read,
+		pps_timestamp_to_read_i			=> latched_timestamp,
 		-----------------------------
 		write_reg_i		=> spi_data_pkt_32bit,
 		write_rdy_i		=> spi_rx_rdy,
