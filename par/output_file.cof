@@ -11,7 +11,7 @@
 		<user_name>Page_1</user_name>
 		<page_flags>2</page_flags>
 		<bit0>
-			<sof_filename>C:/Users/erico/Desktop/projects/greenland_lowthreshold_system/FLOWER-board-firmware/par/output_files/FLOWER-board.sof<compress_bitstream>1</compress_bitstream></sof_filename> 
+			<sof_filename>C:\Users\eric\Desktop\projects\FLOWER-board-firmware/par/output_files/FLOWER-board.sof<compress_bitstream>1</compress_bitstream></sof_filename> 
 		</bit0>
 	</sof_data>
 	<sof_data>
@@ -19,7 +19,7 @@
 		<user_name>Page_0</user_name>
 		<page_flags>1</page_flags>
 		<bit0>
-			<sof_filename>C:/Users/erico/Desktop/projects/greenland_lowthreshold_system/FLOWER-board-firmware/par/output_files/FLOWER-board.sof<compress_bitstream>1</compress_bitstream></sof_filename> 
+			<sof_filename>C:\Users\eric\Desktop\projects\FLOWER-board-firmware/par/output_files/FLOWER-board.sof<compress_bitstream>1</compress_bitstream></sof_filename> 
 		</bit0>
 	</sof_data>
 	<version>10</version>

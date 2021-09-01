@@ -83,10 +83,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"00";
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"06";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"07";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
-	constant fw_month			: std_logic_vector(3 downto 0)  := x"8"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"18";
+	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"01";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -380,8 +380,8 @@ begin
 		rx_adc_data_o 		=> adc1_data);
 	--///////////////////////////////////////	
 	-----------------------------------------
-	systrig_o <= coinc_trig_internal; 
-	sma_aux0_io <= coinc_trig_internal; 
+	systrig_o <= coinc_trig_internal and registers(92)(0); 
+	sma_aux0_io <= coinc_trig_internal and registers(93)(0); 
 	--
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
@@ -403,8 +403,6 @@ begin
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
 		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
-		pps_timestamp_i		  => (others=>'0'),
-		pps_timestamp_latched_o => open,
 		scaler_to_read_o  => scaler_to_read_int);
 	--///////////////////////////////////////	
 	-----------------------------------------

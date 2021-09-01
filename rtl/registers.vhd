@@ -162,10 +162,11 @@ begin
 		registers_io(89) <= x"000000";   --//[89] coinc trig
 		registers_io(90) <= x"000000";   --//[90] coinc trig
 		registers_io(91) <= x"000200";   --//[91] coinc trig
+		registers_io(92) <= x"000001";   --//[92] systrigout config
+		registers_io(93) <= x"000000";   --//[93] sma trig_out config
 
-		registers_io(base_adrs_trig_thresh+6) <= x"0FFFFF";   --//[92]
-		registers_io(base_adrs_trig_thresh+7) <= x"0FFFFF";   --//[93]
-		registers_io(base_adrs_trig_thresh+8) <= x"0FFFFF";   --//[94]
+		
+		registers_io(94) <= x"000000";   --//[94]
 		registers_io(base_adrs_trig_thresh+9) <= x"0FFFFF";   --//[95]
 		registers_io(base_adrs_trig_thresh+10) <= x"0FFFFF";   --//[96]
 		registers_io(base_adrs_trig_thresh+11) <= x"0FFFFF";   --//[97]
