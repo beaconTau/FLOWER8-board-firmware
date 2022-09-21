@@ -83,10 +83,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"00";
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"07";
-	constant fw_year			: std_logic_vector(11 downto 0) := x"7E5"; 
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"08";
+	constant fw_year			: std_logic_vector(11 downto 0) := x"7E6"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"01";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"15";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -165,6 +165,8 @@ architecture rtl of flower_top is
 	signal event_ram_write_address : std_logic_vector(9 downto 0);
 	--//timestamps
 	signal latched_timestamp : std_logic_Vector(47 downto 0);
+	--//pps
+	signal internal_delayed_pps : std_logic := '0';
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -264,7 +266,7 @@ begin
 		coinc_trig_i=> coinc_trig_internal,
 		phase_trig_i=> '0', --doesn't exist yet
 		ext_trig_i	=> sma_aux1_io, --use SMA1 for ext trig input. Make selectable?
-		pps_i			=> gpio_sas_io(0), 
+		pps_i			=> internal_delayed_pps, --gpio_sas_io(0), 
 		latched_timestamp_o  => latched_timestamp,
 		status_reg_o	 => event_manager_status_reg,
 		ram_write_o		 => event_ram_write_en,
@@ -380,7 +382,7 @@ begin
 		rx_adc_data_o 		=> adc1_data);
 	--///////////////////////////////////////	
 	-----------------------------------------
-	systrig_o <= coinc_trig_internal and registers(92)(0); 
+	systrig_o <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
 	sma_aux0_io <= coinc_trig_internal and registers(93)(0); 
 	--
 	xCOINC_TRIG : entity work.simple_trigger
@@ -389,6 +391,8 @@ begin
 		clk_i			=> clock_internal_10MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
+		pps_i			=>	gpio_sas_io(0),
+		pps_o			=> internal_delayed_pps,
 		ch0_data_i	=> ch0_data,
 		ch1_data_i	=> ch1_data, 
 		ch2_data_i	=> ch2_data, 

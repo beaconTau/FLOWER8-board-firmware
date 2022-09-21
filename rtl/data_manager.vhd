@@ -10,6 +10,7 @@
 --
 -- DESCRIPTION:  simple data and meta-data manager
 --
+--         update v0.8 / add pps trigger delay
 ---------------------------------------------------------------------------------
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -25,7 +26,8 @@ generic(
 		address_reg_sw_trig :  std_logic_vector(7 downto 0):= x"40";
 		address_reg_max_ram_address : std_logic_vector(7 downto 0):= x"44";
 		address_reg_clear_buffer_full : std_logic_Vector(7 downto 0):= x"4D";
-		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E");
+		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E"
+		);
 
 port(
 		rst_i			:	in		std_logic;
@@ -52,7 +54,7 @@ signal internal_Sw_trig : std_logic := '0';          -- generate sw trigger from
 signal internal_ext_trig_reg : std_logic_vector(1 downto 0); 
 signal internal_ext_trig : std_logic := '0';          -- generate ext trigger from board
 signal internal_pps_trig_reg : std_logic_vector(1 downto 0); 
-signal internal_pps_trig : std_logic := '0';          -- generate ext trigger from board
+signal internal_pps_trig : std_logic := '0';          
 signal internal_trig_to_save_data : std_logic:= '0'; -- signal to tell ram to save data
 
 --metadata stuff
@@ -62,6 +64,7 @@ signal internal_event_timestamp_counter : std_logic_vector(47 downto 0) := (othe
 signal internal_event_counter : std_logic_vector(23 downto 0) := (others=>'0');
 signal internal_trigger_counter : std_logic_vector(23 downto 0) := (others=>'0'); --all trigger types combined
 signal internal_pps_counter : std_logic_vector(23 downto 0) := (others=>'0'); 
+
 signal internal_event_pps_counter : std_logic_vector(23 downto 0) := (others=>'0'); 
 signal internal_running_timestamp : std_logic_vector(47 downto 0);
 
@@ -98,8 +101,9 @@ begin
 		internal_pps_trig_reg <= internal_pps_trig_reg(0) & pps_i; --rising edge condition
 	end if;
 end process;
-proc_make_trig_pulse : process(clk_data_i, internal_sw_trig_reg, internal_ext_trig_reg,
-		                         coinc_trig_i, phase_trig_i)
+
+proc_make_trig_pulse : process(clk_data_i, internal_sw_trig_reg, internal_ext_trig_reg,		                        
+										coinc_trig_i, phase_trig_i)
 begin
 	if rising_edge(clk_data_i) then
 		if internal_sw_trig_reg = "01" then	
