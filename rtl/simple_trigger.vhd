@@ -10,6 +10,7 @@
 --
 -- DESCRIPTION:  coinc. trigger
 --
+--         update v0.8 / add pps trigger delay [9/2022]
 ---------------------------------------------------------------------------------
 library IEEE;
 use ieee.std_logic_1164.all;

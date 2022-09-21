@@ -10,7 +10,6 @@
 --
 -- DESCRIPTION:  simple data and meta-data manager
 --
---         update v0.8 / add pps trigger delay
 ---------------------------------------------------------------------------------
 library IEEE;
 use ieee.std_logic_1164.all;

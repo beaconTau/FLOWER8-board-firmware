@@ -383,7 +383,7 @@ begin
 	--///////////////////////////////////////	
 	-----------------------------------------
 	systrig_o <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
-	sma_aux0_io <= coinc_trig_internal and registers(93)(0); 
+	sma_aux0_io <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
 	--
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
