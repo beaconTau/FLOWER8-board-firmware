@@ -185,9 +185,9 @@ begin
 				scaler_to_read_o <= latched_scaler_array(63) & latched_scaler_array(62);		
 			--pps cycle counter here
 			when x"20" =>
-				scaler_to_read_o <= latched_pps_cycle_counter(23 downto 12) & latched_pps_cycle_counter(11 downto 0);	
+				scaler_to_read_o <= latched_pps_cycle_counter(23 downto 0);	
 			when x"21" =>
-				scaler_to_read_o <= latched_pps_cycle_counter(47 downto 36) & latched_pps_cycle_counter(35 downto 24);				
+				scaler_to_read_o <= latched_pps_cycle_counter(47 downto 24);				
 			--end pps cycle counter
 			
 			when others =>
