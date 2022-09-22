@@ -27,6 +27,7 @@ entity scalers_top is
 		gate_i			:		in		std_logic;
 		reg_i				:		in		register_array_type;
 		coinc_trig_bits_i : in std_logic_vector(11 downto 0);
+		pps_cycle_counter_i : in std_logic_vector(47 downto 0);
 		
 		scaler_to_read_o  :   out	std_logic_vector(23 downto 0));
 end scalers_top;
@@ -38,19 +39,20 @@ type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scal
 
 signal internal_scaler_array : scaler_array_type := (others=>(others=>'0'));
 signal latched_scaler_array : scaler_array_type; --//assigned after refresh pulse
+signal latched_pps_cycle_counter : std_logic_vector(47 downto 0);
 
-	--//need to create a single pulse every Hz with width of 10 MHz clock period
-	signal refresh_clk_counter_100Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
-	signal refresh_clk_counter_1Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
-	signal refresh_clk_counter_100mHz:	std_logic_vector(27 downto 0) := (others=>'0');
-	signal refresh_clk_100Hz				:	std_logic := '0';
-	signal refresh_clk_1Hz				:	std_logic := '0';
-	signal refresh_clk_100mHz			:	std_logic := '0';
-	--//for 10 MHz
-	constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";   
-	--constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
-	constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"0989680";  
-	constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"5F5E100";  	
+--//need to create a single pulse every Hz with width of 10 MHz clock period
+signal refresh_clk_counter_100Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
+signal refresh_clk_counter_1Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
+signal refresh_clk_counter_100mHz:	std_logic_vector(27 downto 0) := (others=>'0');
+signal refresh_clk_100Hz				:	std_logic := '0';
+signal refresh_clk_1Hz				:	std_logic := '0';
+signal refresh_clk_100mHz			:	std_logic := '0';
+--//for 10 MHz
+constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";   
+--constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
+constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"0989680";  
+constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"5F5E100";  	
 component scaler
 port(
 	rst_i 		: in 	std_logic;
@@ -108,10 +110,12 @@ begin
 		for i in 0 to num_scalers-1 loop
 			latched_scaler_array(i) <= (others=>'0');
 		end loop;
+		latched_pps_cycle_counter <= (others=>'0');
 		scaler_to_read_o <= (others=>'0');
 	
 	elsif rising_edge(clk_i) and reg_i(40)(0) = '1' then
 		latched_scaler_array <= internal_scaler_array;
+		latched_pps_cycle_counter <= pps_cycle_counter_i; -- latch the pps counter in same fashion as other scalers
 		
 	elsif rising_edge(clk_i) then
 		case reg_i(41)(7 downto 0) is
@@ -178,8 +182,14 @@ begin
 			when x"1E" =>
 				scaler_to_read_o <= latched_scaler_array(61) & latched_scaler_array(60);				
 			when x"1F" =>
-				scaler_to_read_o <= latched_scaler_array(63) & latched_scaler_array(62);				
-			--
+				scaler_to_read_o <= latched_scaler_array(63) & latched_scaler_array(62);		
+			--pps cycle counter here
+			when x"20" =>
+				scaler_to_read_o <= latched_pps_cycle_counter(23 downto 12) & latched_pps_cycle_counter(11 downto 0);	
+			when x"21" =>
+				scaler_to_read_o <= latched_pps_cycle_counter(47 downto 36) & latched_pps_cycle_counter(35 downto 24);				
+			--end pps cycle counter
+			
 			when others =>
 				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
 		end case;

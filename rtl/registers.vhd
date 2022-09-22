@@ -164,7 +164,7 @@ begin
 		registers_io(91) <= x"000200";   --//[91] coinc trig
 		registers_io(92) <= x"000001";   --//[92] systrigout config
 		registers_io(93) <= x"000000";   --//[93] sma trig_out config
-		registers_io(94) <= x"000000";   --//[94] pps trig delay
+		registers_io(94) <= x"000001";   --//[94] pps trig delay
 
 		
 		registers_io(base_adrs_trig_thresh+9) <= x"0FFFFF";   --//[95]

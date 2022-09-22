@@ -10,7 +10,6 @@
 --
 -- DESCRIPTION:  coinc. trigger
 --
---         update v0.8 / add pps trigger delay [9/2022]
 ---------------------------------------------------------------------------------
 library IEEE;
 use ieee.std_logic_1164.all;
@@ -36,8 +35,6 @@ port(
 		clk_i			:	in		std_logic; --register clock 
 		clk_data_i	:	in		std_logic; --data clock
 		registers_i	:	in		register_array_type;
-		pps_i			:  in		std_logic;
-		pps_o			:	out	std_logic; -- delayed pps option
 		
 		ch0_data_i	: 	in		std_logic_vector(31 downto 0);
 		ch1_data_i	:	in		std_logic_vector(31 downto 0);
@@ -50,11 +47,6 @@ port(
 end simple_trigger;
 
 architecture rtl of simple_trigger is
-
-type pps_delay_state_type is (idle, delay, pulse);
-signal pps_delay_state : pps_delay_state_type;
-signal internal_pps_trig_reg : std_logic_vector(1 downto 0); 
-signal internal_pps_delay_counter : std_logic_vector(23 downto 0) := (others=>'0'); 
 
 type threshold_array is array (3 downto 0) of std_logic_vector(7 downto 0);
 signal trig_threshold_int	: threshold_array;
@@ -109,52 +101,6 @@ end component;
 --------------
 
 begin
-------------------------------------------------
---delayed pps trigger-out option
-process(clk_i, rst_i, pps_i) -- slower 10MHz clock
-begin
-	if rst_i = '1' then
-		internal_pps_trig_reg <= (others=>'0');
-	elsif rising_edge(clk_data_i) then
-		internal_pps_trig_reg <= internal_pps_trig_reg(0) & pps_i; --rising edge condition
-	end if;
-end process;
-----
-process(clk_i, rst_i)
-begin
-	if rst_i = '1' then
-		pps_o <= '0';
-		internal_pps_delay_counter <= (others=>'0');
-		pps_delay_state <= idle;
-	elsif rising_edge(clk_i) then
-		case pps_delay_state is
-			--idle
-			when idle=>
-				pps_o <= '0';
-				internal_pps_delay_counter <= (others=>'0');
-				if internal_pps_trig_reg = "01" then --pps_i rising-edge caught
-					pps_delay_state <= delay;
-				else
-					pps_delay_state <= idle;
-				end if;
-			--delay
-			when delay=>
-				pps_o <= '0';
-				internal_pps_delay_counter <= internal_pps_delay_counter + 1;
-				if internal_pps_delay_counter >= registers_i(to_integer(unsigned(address_reg_pps_delay)))(23 downto 0) then
-					pps_delay_state <= pulse;
-				else
-					pps_delay_state <= delay;
-				end if;
-			--pulse
-			when pulse=>
-				pps_o <= '1'; --pulse for one clk_i cycle
-				internal_pps_delay_counter <= (others=>'0');
-				pps_delay_state <= idle;
-		end case;
-	end if;
-end process;
-------------------------------------------------
 ------------------------------------------------
 proc_pipeline_data : process(clk_data_i)
 begin
