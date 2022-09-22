@@ -92,7 +92,7 @@ begin
 end process;
 ------------------------------------------------
 --pps cycle counter, do this on a faster clock
-process(clk_data_i, rst_i, pps_i) -- slower 10MHz clock, from system
+process(clk_data_i, rst_i, pps_i) 
 begin
 	if rst_i = '1' then
 		internal_pps_fast_reg <= (others=>'0');
