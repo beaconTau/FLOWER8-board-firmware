@@ -20,6 +20,7 @@ use work.defs.all;
 
 entity adc_controller is
 	generic(
+		adc_data_parallel_width : integer := 64;
 		--//ADC select register
 		adc_config_reg_adr_0	: std_logic_vector(7 downto 0):= x"3B"; 
 		--//24-bit configuration word (8bit addr + 16bit message) register
@@ -58,8 +59,8 @@ entity adc_controller is
 		rstn1_o		: 	out	std_logic;
 		pd1_o			: 	out	std_logic;
 		--//fifo management
-		rx_adc0_data_i		:  in  std_logic_vector(63 downto 0);
-		rx_adc1_data_i		:  in  std_logic_vector(63 downto 0);
+		rx_adc0_data_i		:  in  std_logic_vector(adc_data_parallel_width-1 downto 0); --adc0
+		rx_adc1_data_i		:  in  std_logic_vector(adc_data_parallel_width-1 downto 0); --adc1
 		rx_fifo_rd_en_o   :	out std_logic;
 		rx_fifo_usedwrd_i	:	in	 std_logic_vector(2 downto 0);
 		--//write ram control from data manager
