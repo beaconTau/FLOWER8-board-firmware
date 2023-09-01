@@ -97,14 +97,22 @@ signal rx_data_pipe0_a : std_logic_vector(63 downto 0); --pipelining
 signal rx_data_pipe0_b : std_logic_vector(63 downto 0); --pipelining,  after bitshift alignment
 signal rx_data_pipe0_ch0 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
 signal rx_data_pipe0_ch1 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
-signal rx_data_aligned_ch0 : std_logic_vector(31 downto 0); --post adc sample alignment
-signal rx_data_aligned_ch1 : std_logic_vector(31 downto 0); --post adc sample alignemnt
+signal rx_data_pipe0_ch2 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_pipe0_ch3 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_aligned_ch0 : std_logic_vector(15 downto 0); --post adc sample alignment
+signal rx_data_aligned_ch1 : std_logic_vector(15 downto 0); --post adc sample alignemnt
+signal rx_data_aligned_ch2 : std_logic_vector(15 downto 0); --post adc sample alignment
+signal rx_data_aligned_ch3 : std_logic_vector(15 downto 0); --post adc sample alignemnt
 signal rx_data_pipe1_a : std_logic_vector(63 downto 0); --pipelining
 signal rx_data_pipe1_b : std_logic_vector(63 downto 0); --pipelining, after bitshift alignment
-signal rx_data_pipe1_ch2 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
-signal rx_data_pipe1_ch3 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
-signal rx_data_aligned_ch2 : std_logic_vector(31 downto 0); --post adc sample alignment
-signal rx_data_aligned_ch3 : std_logic_vector(31 downto 0); --post adc sample alignemnt
+signal rx_data_pipe1_ch4 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_pipe1_ch5 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_pipe1_ch6 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_pipe1_ch7 : std_logic_vector(63 downto 0); --puts bytes in right sample order, per-channel
+signal rx_data_aligned_ch4 : std_logic_vector(15 downto 0); --post adc sample alignment
+signal rx_data_aligned_ch5 : std_logic_vector(15 downto 0); --post adc sample alignemnt
+signal rx_data_aligned_ch6 : std_logic_vector(15 downto 0); --post adc sample alignment
+signal rx_data_aligned_ch7 : std_logic_vector(15 downto 0); --post adc sample alignemnt
 
 signal internal_data_0 : std_logic_vector(63 downto 0); --after pre-trig block, write-side RAM
 signal internal_data_1 : std_logic_vector(63 downto 0); --after pre-trig block, write-side RAM
@@ -351,77 +359,111 @@ end process;
 --rx_data_pipe1_ch3(31 downto 0) <= 	rx_data_pipe1_b(39 downto 32) & rx_data_pipe1_b(47 downto 40) &
 --												rx_data_pipe1_b(55 downto 48) & rx_data_pipe1_b(63 downto 56);
 
---re-arrange data into per-channel vectors. Assuming 8-ch board operation:												
-rx_data_pipe0_ch0(31 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8) &
-												rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
-rx_data_pipe0_ch1(31 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40) &
-												rx_data_pipe0_b(55 downto 48) & rx_data_pipe0_b(63 downto 56);
-rx_data_pipe0_ch0(31 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8) &
-												rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
-rx_data_pipe0_ch1(31 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40) &
-												rx_data_pipe0_b(55 downto 48) & rx_data_pipe0_b(63 downto 56);
-rx_data_pipe1_ch2(31 downto 0) <= 	rx_data_pipe1_b(7 downto 0)   & rx_data_pipe1_b(15 downto 8) &
-												rx_data_pipe1_b(23 downto 16) & rx_data_pipe1_b(31 downto 24);
-rx_data_pipe1_ch3(31 downto 0) <= 	rx_data_pipe1_b(39 downto 32) & rx_data_pipe1_b(47 downto 40) &
-												rx_data_pipe1_b(55 downto 48) & rx_data_pipe1_b(63 downto 56);
+--re-arrange data into per-channel vectors. Assuming 8-ch board operation. Should probably array all of this for compactness											
+rx_data_pipe0_ch0(15 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8);
+rx_data_pipe0_ch1(15 downto 0) <= 	rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
+rx_data_pipe0_ch2(15 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40);
+rx_data_pipe0_ch3(15 downto 0) <= 	rx_data_pipe0_b(55 downto 48) & rx_data_pipe0_b(63 downto 56);
+rx_data_pipe1_ch4(15 downto 0) <= 	rx_data_pipe1_b(7 downto 0)   & rx_data_pipe1_b(15 downto 8);
+rx_data_pipe1_ch5(15 downto 0) <= 	rx_data_pipe1_b(23 downto 16) & rx_data_pipe1_b(31 downto 24);
+rx_data_pipe1_ch6(15 downto 0) <= 	rx_data_pipe1_b(39 downto 32) & rx_data_pipe1_b(47 downto 40);
+rx_data_pipe1_ch7(15 downto 0) <= 	rx_data_pipe1_b(55 downto 48) & rx_data_pipe1_b(63 downto 56);
 												
 --process to time-align datastreams between ADCs. SW controlled, using on-board pulser	fanout											
 proc_sample_shift : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
-		rx_data_pipe0_ch0(63 downto 32) <= rx_data_pipe0_ch0(31 downto 0);
-		rx_data_pipe0_ch1(63 downto 32) <= rx_data_pipe0_ch1(31 downto 0);
-		rx_data_pipe1_ch2(63 downto 32) <= rx_data_pipe1_ch2(31 downto 0);
-		rx_data_pipe1_ch3(63 downto 32) <= rx_data_pipe1_ch3(31 downto 0);
+		--fill the arrays, again should compactify this code
+		for i in 3 to 0 loop 
+			rx_data_pipe0_ch0(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch0(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe0_ch1(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch1(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe0_ch2(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch2(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe0_ch3(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch3(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe1_ch4(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch4(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe1_ch5(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch5(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe1_ch6(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch6(16*(i+1)-1 downto 16*(i+1)-16);
+			rx_data_pipe1_ch7(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch7(16*(i+1)-1 downto 16*(i+1)-16);
+		end loop;
+		--rx_data_pipe0_ch1(63 downto 32) <= rx_data_pipe0_ch1(31 downto 0);
+		--rx_data_pipe1_ch2(63 downto 32) <= rx_data_pipe1_ch2(31 downto 0);
+		--rx_data_pipe1_ch3(63 downto 32) <= rx_data_pipe1_ch3(31 downto 0);
 		
 		case internal_samplealign_val_0 is --adjust ADC0 
 			when "000" => --no adjustment
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 31 downto sample_align_offset);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 31 downto sample_align_offset);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 31-16 downto sample_align_offset);
 			when "001" => --speed up by 1 sample
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 23 downto sample_align_offset-8);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 23 downto sample_align_offset-8);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 23-16 downto sample_align_offset-8);
 			when "010" => --speed up by 2 samples
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 15 downto sample_align_offset-16);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 15 downto sample_align_offset-16);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 15-16 downto sample_align_offset-16);
 			when "101" => --slow down by 1 sample
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 39 downto sample_align_offset+8);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 39 downto sample_align_offset+8);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 39-16 downto sample_align_offset+8);
 			when "110" => --slow down by 2 samples
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 47 downto sample_align_offset+16);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 47 downto sample_align_offset+16);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 47-16 downto sample_align_offset+16);
 			when others => --no adjustment
-				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 31 downto sample_align_offset);
-				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 31 downto sample_align_offset);
+				rx_data_aligned_ch0 <= rx_data_pipe0_ch0(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch1 <= rx_data_pipe0_ch1(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch2 <= rx_data_pipe0_ch2(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch3 <= rx_data_pipe0_ch3(sample_align_offset + 31-16 downto sample_align_offset);
 		end case;
 		--//--
 		case internal_samplealign_val_1 is --adjust ADC1
 			when "000" => --no adjustment
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 31 downto sample_align_offset);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 31 downto sample_align_offset);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 31-16 downto sample_align_offset);
 			when "001" => --speed up by 1 sample
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 23 downto sample_align_offset-8);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 23 downto sample_align_offset-8);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 23-16 downto sample_align_offset-8);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 23-16 downto sample_align_offset-8);
 			when "010" => --speed up by 2 samples
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 15 downto sample_align_offset-16);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 15 downto sample_align_offset-16);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 15-16 downto sample_align_offset-16);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 15-16 downto sample_align_offset-16);
 			when "101" => --slow down by 1 sample
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 39 downto sample_align_offset+8);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 39 downto sample_align_offset+8);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 39-16 downto sample_align_offset+8);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 39-16 downto sample_align_offset+8);
 			when "110" => --slow down by 2 samples
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 47 downto sample_align_offset+16);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 47 downto sample_align_offset+16);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 47-16 downto sample_align_offset+16);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 47-16 downto sample_align_offset+16);
 			when others => --no adjustment
-				rx_data_aligned_ch2 <= rx_data_pipe1_ch2(sample_align_offset + 31 downto sample_align_offset);
-				rx_data_aligned_ch3 <= rx_data_pipe1_ch3(sample_align_offset + 31 downto sample_align_offset);
+				rx_data_aligned_ch4 <= rx_data_pipe1_ch4(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch5 <= rx_data_pipe1_ch5(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch6 <= rx_data_pipe1_ch6(sample_align_offset + 31-16 downto sample_align_offset);
+				rx_data_aligned_ch7 <= rx_data_pipe1_ch7(sample_align_offset + 31-16 downto sample_align_offset);
 		end case;
 	end if;
 end process;
 --assign output data ports, goes to trigger
-ch0_datastream_o <= rx_data_aligned_ch0;
-ch1_datastream_o <= rx_data_aligned_ch1;
-ch2_datastream_o <= rx_data_aligned_ch2;
-ch3_datastream_o <= rx_data_aligned_ch3;
+ch0_datastream_o <= x"0000" & rx_data_aligned_ch0;
+ch1_datastream_o <= x"0000" & rx_data_aligned_ch1;
+ch2_datastream_o <= x"0000" & rx_data_aligned_ch2;
+ch3_datastream_o <= x"0000" & rx_data_aligned_ch3;
+ch4_datastream_o <= x"0000" & rx_data_aligned_ch4;
+ch5_datastream_o <= x"0000" & rx_data_aligned_ch5;
+ch6_datastream_o <= x"0000" & rx_data_aligned_ch6;
+ch7_datastream_o <= x"0000" & rx_data_aligned_ch7;
 --////////////////////////////////////////////////////////////////////////
 ----MOVED RAM WRITING to data_manager.vhd 8.22/2021
 --proc_simple_sw_trigger : process(rst_i, clk_data_i)
@@ -506,14 +548,14 @@ xPRETRIG_0 : entity work.pretrigger_window --ADC0
 		rst_i				=> rst_i,
 		clk_i				=> clk_data_i,	
 		pretrig_sel_i	=> internal_pretrig_val,	
-		data_i			=> rx_data_aligned_ch1 & rx_data_aligned_ch0,	
+		data_i			=> rx_data_aligned_ch3 & rx_data_aligned_ch2 & rx_data_aligned_ch1 & rx_data_aligned_ch0,	
 		data_o			=> internal_data_0);	
 xPRETRIG_1 : entity work.pretrigger_window --ADC1
 	port map(
 		rst_i				=> rst_i,
 		clk_i				=> clk_data_i,	
 		pretrig_sel_i	=> internal_pretrig_val,	
-		data_i			=> rx_data_aligned_ch3 & rx_data_aligned_ch2,	
+		data_i			=> rx_data_aligned_ch7 & rx_data_aligned_ch6 & rx_data_aligned_ch5 & rx_data_aligned_ch4,	
 		data_o			=> internal_data_1);	
 --////////////////////////////////////////////////////////////////////////
 --One RAM block per ADC

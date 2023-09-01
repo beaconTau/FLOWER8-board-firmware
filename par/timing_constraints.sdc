@@ -12,8 +12,8 @@ derive_clock_uncertainty -add
 
 create_clock -name board_clock_i 	-period 10.000MHz 	[get_ports {board_clock_i}]
 create_clock -name sys_clock_i 	   -period 10.000MHz 	[get_ports {sys_clock_i}]
-create_clock -name adc0_fclk_i   	-period 472.000MHz 	[get_ports {adc0_fclk_i}]
-create_clock -name adc1_fclk_i   	-period 472.000MHz 	[get_ports {adc1_fclk_i}]
+create_clock -name adc0_fclk_i   	-period 500.000MHz 	[get_ports {adc0_fclk_i}]
+create_clock -name adc1_fclk_i   	-period 500.000MHz 	[get_ports {adc1_fclk_i}]
 
 
 #create_clock -name spi_clock_i 		-period 10.000MHz 	[get_ports {spi_clock_i}]

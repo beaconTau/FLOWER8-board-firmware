@@ -357,7 +357,11 @@ begin
 		ch0_datastream_o  => ch0_data ,  --to trigger block
 		ch1_datastream_o  => ch1_data ,
 		ch2_datastream_o  => ch2_data ,
-		ch3_datastream_o  => ch3_data );
+		ch3_datastream_o  => ch3_data ,
+		ch4_datastream_o  => open ,  --to trigger block
+		ch5_datastream_o  => open ,
+		ch6_datastream_o  => open ,
+		ch7_datastream_o  => open);
 	--///////////////////////////////////////	
 	-----------------------------------------
 	--//hmcad151x data-flow:			
