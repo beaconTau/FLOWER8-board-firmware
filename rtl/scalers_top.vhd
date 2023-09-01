@@ -74,7 +74,7 @@ begin
 	end if;
 end process;
 --//scalers 0-11
-CoincTrigScalers1Hz : for i in 0 to 11 generate
+CoincTrigScalers1Hz : for i in 0 to 19 generate
 	xCOINC1Hz : scaler
 	port map(
 		rst_i => rst_i,
@@ -84,24 +84,24 @@ CoincTrigScalers1Hz : for i in 0 to 11 generate
 		scaler_o => internal_scaler_array(i));
 end generate;
 --//scalers 12-23
-CoincTrigScalers1HzGated : for i in 0 to 11 generate
+CoincTrigScalers1HzGated : for i in 0 to 19 generate
 	xCOINC1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
 		count_i => coinc_trig_bits_i(i) and gate_i,
-		scaler_o => internal_scaler_array(i+12));
+		scaler_o => internal_scaler_array(i+20));
 end generate;
 --//scalers 24-35
-CoincTrigScalers100Hz : for i in 0 to 11 generate
+CoincTrigScalers100Hz : for i in 0 to 19 generate
 	xCOINC100Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_100Hz,
 		count_i => coinc_trig_bits_i(i),
-		scaler_o => internal_scaler_array(i+24));
+		scaler_o => internal_scaler_array(i+40));
 end generate;
 -------------------------------------		
 proc_save_scalers : process(rst_i, clk_i, reg_i)
