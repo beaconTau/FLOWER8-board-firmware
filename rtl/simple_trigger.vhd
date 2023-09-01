@@ -58,7 +58,7 @@ signal servo_threshold_int	: threshold_array;
 signal coinc_require_int	: std_logic_vector(3 downto 0);
 signal vppmode_int			: std_logic;
 
-type streaming_data_array is array(7 downto 0) of std_logic_vector(31 downto 0);
+type streaming_data_array is array(7 downto 0) of std_logic_vector(63 downto 0);
 signal streaming_data : streaming_data_array := (others=>(others=>'0')); --pipeline data
 signal streaming_data_2 : streaming_data_array := (others=>(others=>'0'));
 
@@ -351,9 +351,11 @@ xVPPMODESYNC : signal_sync
 	SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_param_reg)))(16), --vppmode
 	SignalOut_clkB	=> vppmode_int);
 --------------
-trig_array_for_scalers <= "00" & servo_clear(3) & servo_clear(2) &
+trig_array_for_scalers <=  "000000" & servo_clear(7) & servo_clear(6) &
+									servo_clear(5) & servo_clear(4) & servo_clear(3) & servo_clear(2) &
 									servo_clear(1) & servo_clear(0) & coincidence_servo &
-									trig_clear(3) & trig_clear(2) & trig_clear(1) & 
+									trig_clear(7) & trig_clear(6) & trig_clear(5) & 
+									trig_clear(4) & trig_clear(3) & trig_clear(2) & trig_clear(1) & 
 									trig_clear(0) & coincidence_trigger;
 ----TRIGGER OUT!!
 coinc_trig_o <= coincidence_trigger_reg(0); --use the variable-width reg signal instead of the coincidence_trigger to save 1 clk cycle of delay

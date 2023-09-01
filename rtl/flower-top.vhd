@@ -158,7 +158,7 @@ architecture rtl of flower_top is
 	signal ch5_data : std_logic_vector(31 downto 0);
 	signal ch6_data : std_logic_vector(31 downto 0);
 	signal ch7_data : std_logic_vector(31 downto 0);
-	signal coinc_trig_scaler_bits : std_logic_vector(11 downto 0);
+	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
 	signal coinc_trig_internal : std_logic;
 	--//data chunks

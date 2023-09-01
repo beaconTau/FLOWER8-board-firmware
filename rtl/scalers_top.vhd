@@ -26,7 +26,7 @@ entity scalers_top is
 		clk_i				:		in 	std_logic;
 		gate_i			:		in		std_logic;
 		reg_i				:		in		register_array_type;
-		coinc_trig_bits_i : in std_logic_vector(11 downto 0);
+		coinc_trig_bits_i : in std_logic_vector(23 downto 0);
 		pps_cycle_counter_i : in std_logic_vector(47 downto 0);
 		
 		scaler_to_read_o  :   out	std_logic_vector(23 downto 0));
