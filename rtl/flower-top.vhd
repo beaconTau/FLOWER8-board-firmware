@@ -154,6 +154,10 @@ architecture rtl of flower_top is
 	signal ch1_data : std_logic_vector(31 downto 0);
 	signal ch2_data : std_logic_vector(31 downto 0);
 	signal ch3_data : std_logic_vector(31 downto 0);
+	signal ch4_data : std_logic_vector(31 downto 0);
+	signal ch5_data : std_logic_vector(31 downto 0);
+	signal ch6_data : std_logic_vector(31 downto 0);
+	signal ch7_data : std_logic_vector(31 downto 0);
 	signal coinc_trig_scaler_bits : std_logic_vector(11 downto 0);
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
 	signal coinc_trig_internal : std_logic;
@@ -358,10 +362,10 @@ begin
 		ch1_datastream_o  => ch1_data ,
 		ch2_datastream_o  => ch2_data ,
 		ch3_datastream_o  => ch3_data ,
-		ch4_datastream_o  => open ,  --to trigger block
-		ch5_datastream_o  => open ,
-		ch6_datastream_o  => open ,
-		ch7_datastream_o  => open);
+		ch4_datastream_o  => ch4_data ,  --to trigger block
+		ch5_datastream_o  => ch5_data ,
+		ch6_datastream_o  => ch6_data ,
+		ch7_datastream_o  => ch7_data );		
 	--///////////////////////////////////////	
 	-----------------------------------------
 	--//hmcad151x data-flow:			
@@ -400,6 +404,10 @@ begin
 		ch1_data_i	=> ch1_data, 
 		ch2_data_i	=> ch2_data, 
 		ch3_data_i	=> ch3_data,
+		ch4_data_i	=> ch4_data,
+		ch5_data_i	=> ch5_data, 
+		ch6_data_i	=> ch6_data, 
+		ch7_data_i	=> ch7_data,
 		trig_bits_o => coinc_trig_scaler_bits,
 		coinc_trig_o=> coinc_trig_internal);
 	-----------------------------------------

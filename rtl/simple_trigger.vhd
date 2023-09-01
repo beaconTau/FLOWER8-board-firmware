@@ -40,6 +40,10 @@ port(
 		ch1_data_i	:	in		std_logic_vector(31 downto 0);
 		ch2_data_i	:	in		std_logic_vector(31 downto 0);
 		ch3_data_i	:	in		std_logic_vector(31 downto 0);
+		ch4_data_i	: 	in		std_logic_vector(31 downto 0);
+		ch5_data_i	:	in		std_logic_vector(31 downto 0);
+		ch6_data_i	:	in		std_logic_vector(31 downto 0);
+		ch7_data_i	:	in		std_logic_vector(31 downto 0);
 		
 		trig_bits_o : 	out	std_logic_vector(11 downto 0); --for scalers
 		coinc_trig_o: 	out	std_logic --trigger
