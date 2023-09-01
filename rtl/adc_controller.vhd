@@ -71,7 +71,11 @@ entity adc_controller is
 		ch0_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch1_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch2_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
-		ch3_datastream_o	:	out std_logic_vector(31 downto 0)  --streaming data to trig block
+		ch3_datastream_o	:	out std_logic_vector(31 downto 0);  --streaming data to trig block
+		ch4_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
+		ch5_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
+		ch6_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
+		ch7_datastream_o	:	out std_logic_vector(31 downto 0)  --streaming data to trig block
 		);
 		
 end adc_controller;
@@ -337,7 +341,21 @@ begin
 	end if;
 end process;
 --////////////////////////////////////////////////////////////////////////
---re-arrange data into per-channel vectors. Assuming 4-ch board operation:
+----re-arrange data into per-channel vectors. Assuming 4-ch board operation:
+--rx_data_pipe0_ch0(31 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8) &
+--												rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
+--rx_data_pipe0_ch1(31 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40) &
+--												rx_data_pipe0_b(55 downto 48) & rx_data_pipe0_b(63 downto 56);
+--rx_data_pipe1_ch2(31 downto 0) <= 	rx_data_pipe1_b(7 downto 0)   & rx_data_pipe1_b(15 downto 8) &
+--												rx_data_pipe1_b(23 downto 16) & rx_data_pipe1_b(31 downto 24);
+--rx_data_pipe1_ch3(31 downto 0) <= 	rx_data_pipe1_b(39 downto 32) & rx_data_pipe1_b(47 downto 40) &
+--												rx_data_pipe1_b(55 downto 48) & rx_data_pipe1_b(63 downto 56);
+
+--re-arrange data into per-channel vectors. Assuming 8-ch board operation:												
+rx_data_pipe0_ch0(31 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8) &
+												rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
+rx_data_pipe0_ch1(31 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40) &
+												rx_data_pipe0_b(55 downto 48) & rx_data_pipe0_b(63 downto 56);
 rx_data_pipe0_ch0(31 downto 0) <= 	rx_data_pipe0_b(7 downto 0)   & rx_data_pipe0_b(15 downto 8) &
 												rx_data_pipe0_b(23 downto 16) & rx_data_pipe0_b(31 downto 24);
 rx_data_pipe0_ch1(31 downto 0) <= 	rx_data_pipe0_b(39 downto 32) & rx_data_pipe0_b(47 downto 40) &
@@ -346,6 +364,7 @@ rx_data_pipe1_ch2(31 downto 0) <= 	rx_data_pipe1_b(7 downto 0)   & rx_data_pipe1
 												rx_data_pipe1_b(23 downto 16) & rx_data_pipe1_b(31 downto 24);
 rx_data_pipe1_ch3(31 downto 0) <= 	rx_data_pipe1_b(39 downto 32) & rx_data_pipe1_b(47 downto 40) &
 												rx_data_pipe1_b(55 downto 48) & rx_data_pipe1_b(63 downto 56);
+												
 --process to time-align datastreams between ADCs. SW controlled, using on-board pulser	fanout											
 proc_sample_shift : process(clk_data_i)
 begin

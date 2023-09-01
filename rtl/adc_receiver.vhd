@@ -84,9 +84,9 @@ serdes_clk_o <= internal_serdes_outclk;
 xRXSERDES: rxserdes
 port map(
 	rx_in => internal_adc_serial_data,
-	rx_inclock => adc_lclk_i, --//LVDS_bit_clock (472MHz, DDR)
+	rx_inclock => adc_lclk_i, --//LVDS_bit_clock (*500MHz, DDR)
 	rx_out => internal_adc_parallel_data,
-	rx_outclock => internal_serdes_outclk); --//LVDS_bit_clock/4 -- 118MHz
+	rx_outclock => internal_serdes_outclk); --//LVDS_bit_clock/4 -- *125MHz
 
 --//FIFO, 8-words deep 8/19
 xRXFIFO : entity work.rx_fifo(syn)

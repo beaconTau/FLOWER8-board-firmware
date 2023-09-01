@@ -26,7 +26,7 @@ entity clock_manager is
 		CLK_2MHz_o		:  out	std_logic;
 		CLK_10MHz_loc_o:  out	std_logic;
 		CLK_10MHz_sys_o:  out	std_logic;
-		CLK_core_sys_o :  out	std_logic; --118.0MHz, presently
+		CLK_core_sys_o :  out	std_logic; --*125.00MHz, with 8-chan firmware
 		CLK_1Hz_o		:  out	std_logic;
 		CLK_10Hz_o		:  out	std_logic;
 		CLK_1kHz_o		:	out	std_logic;
