@@ -21,6 +21,9 @@ use work.register_map.all;
 
 --////////////////////////////////////////////////////////////////////////////
 entity registers_spi is
+	generic(
+		address_reg_multi_board_sync : std_logic_vector(7 downto 0):= x"63"
+	);	
 	port(
 		rst_powerup_i	:	in		std_logic;
 		rst_i				:	in		std_logic;  --//reset
@@ -50,6 +53,8 @@ entity registers_spi is
 		write_rdy_i		:	in		std_logic; --//data ready to be written in spi_slave
 		read_reg_o 		:	out 	std_logic_vector(define_register_size-1 downto 0); --//set data here to be read out
 		registers_io	:	inout	register_array_type;
+		sync_o			:  out	std_logic; -- sync for dual-board operation (if assigned as primary)
+		sync_i			:	in		std_logic; -- sync for dual-board operation (if assigned as secondary)
 		address_o		:	out	std_logic_vector(define_address_size-1 downto 0));
 		
 	end registers_spi;
@@ -58,6 +63,12 @@ architecture rtl of registers_spi is
 -------------------------
 signal unique_chip_id		: std_logic_vector(63 downto 0) := (others=>'1');
 signal unique_chip_id_rdy	: std_logic;
+signal internal_sync_master_true_reg : std_logic_vector(1 downto 0) := "00";
+signal internal_sync_slave_true_reg  : std_logic_vector(1 downto 0) :="00";
+signal internal_sync_command_from_master  : std_logic_vector(1 downto 0) :="00";
+signal register_value_sync_hold   		: std_logic_vector(23 downto 0) := (others=>'0');
+signal register_address_sync_hold  		: std_logic_vector(7 downto 0)  := (others=>'0');
+
 component ChipID
 	port( clkin, reset			: in 	std_logic;
 			data_valid				: out	std_logic;
@@ -66,6 +77,8 @@ end component;
 -------------------------
 
 begin
+
+sync_o <= internal_sync_master_true_reg(0);
 
 --//write registers: 
 proc_write_register : process(rst_i, clk_i, write_rdy_i, write_reg_i, registers_io, rst_powerup_i)
@@ -196,6 +209,13 @@ begin
 		read_reg_o 	<= x"00" & registers_io(1); 
 		address_o 	<= x"00";
 		
+		internal_sync_master_true_reg <= "00";
+		internal_sync_slave_true_reg <= "00";
+		internal_sync_command_from_master <= "00";
+		register_value_sync_hold <= (others=>'0');
+		register_address_sync_hold <= (others=>'0');
+		
+
 	--//////////////////////////////////////////////////////////////////////////////////////////
 	--lots of cond. statements here, not awesome, but meets timing (only running this @25 MHz)
 	-------------------------------------------------------------
@@ -211,7 +231,32 @@ begin
 		registers_io(44)	<= pps_timestamp_to_read_i(23 downto 0);
 		registers_io(45)	<= pps_timestamp_to_read_i(47 downto 24);
 		--//------------------------------------------------------------------------------
+		--//------------------------------------------------------------------------------
+		--sync stuff, grab register here, separate from main handling flow
+		if write_rdy_i = '1' and write_reg_i(31 downto 24) = address_reg_multi_board_sync then
+			internal_sync_master_true_reg(0) <=  write_reg_i(0);
+			internal_sync_slave_true_reg(0)  <=  write_reg_i(1);
+		end if;
+		----
+		--handle master/slave differently, both on falling edge conditions
+		--->master register gets written when the sync register is released
+		if internal_sync_master_true_reg = "10" then
+			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+			address_o <= register_address_sync_hold;
+		end if;
+		--->slave register gets written when there is a falling edge condition on the external sync input (e.g. trigger)
+		------ with additional slave_sync_register still high
+		if internal_sync_command_from_master = "10" and internal_sync_slave_true_reg(0) = '1' then
+			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+			address_o <= register_address_sync_hold;
+		end if;
 			
+		internal_sync_master_true_reg(1) <= internal_sync_master_true_reg(0);
+		internal_sync_slave_true_reg(1) <= internal_sync_slave_true_reg(0);
+		internal_sync_command_from_master <= internal_sync_command_from_master(0) & sync_i;
+		--//------------------------------------------------------------------------------
+		--//------------------------------------------------------------------------------
+		--main register control stuff
 		--//read register command
 		if write_rdy_i = '1' and write_reg_i(31 downto 24) = x"6D" then
 			read_reg_o <=  write_reg_i(7 downto 0) & registers_io(to_integer(unsigned(write_reg_i(7 downto 0))));
@@ -247,10 +292,20 @@ begin
 --			address_o <= x"47";  --//initiate a read
 --			
 			
-		--//write register value
-		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" then  --//read/write registers
+		---------------------------------
+		--//write register value, in sync mode
+		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and (internal_sync_master_true_reg(0) = '1'  or
+					internal_sync_slave_true_reg(0) = '1') then
+				register_value_sync_hold <= write_reg_i(23 downto 0);
+				register_address_sync_hold <= write_reg_i(31 downto 24);
+
+		----------------------------------
+		--//write register value, in normal non-sync mode
+		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and internal_sync_master_true_reg = "00"  and
+					internal_sync_slave_true_reg = "00" then  --//read/write registers
 				registers_io(to_integer(unsigned(write_reg_i(31 downto 24)))) <= write_reg_i(23 downto 0);
 				address_o <= write_reg_i(31 downto 24);
+		----------------------------------
 
 		else
 			address_o <= x"00";

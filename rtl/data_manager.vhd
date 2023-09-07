@@ -25,7 +25,8 @@ generic(
 		address_reg_sw_trig :  std_logic_vector(7 downto 0):= x"40";
 		address_reg_max_ram_address : std_logic_vector(7 downto 0):= x"44";
 		address_reg_clear_buffer_full : std_logic_Vector(7 downto 0):= x"4D";
-		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E"
+		address_reg_reset_evt_counters :  std_logic_vector(7 downto 0):= x"7E";
+		address_reg_multi_board_sync : std_logic_vector(7 downto 0):= x"63"
 		);
 
 port(

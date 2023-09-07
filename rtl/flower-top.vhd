@@ -24,8 +24,7 @@ use work.register_map.all;
 entity flower_top is
 
 Generic(
-	compile_level	: std_logic_vector(3 downto 0)  := x"0"); --TBD
-	
+	compile_level	: std_logic_vector(3 downto 0)  := x"0");	
 Port(
 	--ADC0 data (all LVDS)
 	adc0_dA_i		: in std_logic_vector(3 downto 0);
@@ -65,8 +64,8 @@ Port(
 	gpio_sas_io			: inout std_logic_vector(3 downto 0); --gpio(0) is the pps
 	gpio_board_io		: inout std_logic_vector(6 downto 0); --gpios 5 & 6 are on-board LEDs
 	biastee_sel_o		: out std_logic_vector(7 downto 0);	
-	sma_aux0_io			: inout std_logic;
-	sma_aux1_io			: inout std_logic;
+	sma_aux0_io			: out  std_logic;  --*define 0 as output
+	sma_aux1_io			: in std_logic;  --*define 1 as input, combined these two will send trigger back and forth, and also do syncing
 	usb_uart_rx_i		: in	std_logic; --usb ftdi uart
 	usb_uart_tx_o		: out std_logic; --usb ftdi uart
 	usb_uart_cts_i		: in	std_logic; --usb ftdi uart
@@ -172,6 +171,7 @@ architecture rtl of flower_top is
 	--//pps
 	signal internal_delayed_pps : std_logic := '0';
 	signal internal_pps_cycle_counter : std_logic_Vector(47 downto 0);
+	signal internal_sync_out : std_logic;
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -308,6 +308,8 @@ begin
 		write_rdy_i		=> spi_rx_rdy,
 		read_reg_o 		=> register_to_read,
 		registers_io	=> registers, --//system register space
+		sync_i 			=> sma_aux1_io,
+		sync_o			=> internal_sync_out,
 		address_o		=> register_adr);	
 	--///////////////////////////////////////	
 	-----------------------------------------
@@ -391,8 +393,10 @@ begin
 		rx_adc_data_o 		=> adc1_data);
 	--///////////////////////////////////////	
 	-----------------------------------------
-	systrig_o   <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
-	sma_aux0_io <= (coinc_trig_internal and registers(93)(0)) or (internal_delayed_pps and registers(93)(8)); 
+	--systrig_o   <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
+	systrig_o   <= 'Z'; -- don't use differential output over mini-sas
+	sma_aux0_io <= (((coinc_trig_internal and registers(93)(0)) or (internal_delayed_pps and registers(93)(8))) and (not registers(99)(0)))
+							or internal_sync_out; 
 	--
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
