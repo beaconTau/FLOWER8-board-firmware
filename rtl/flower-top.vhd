@@ -394,7 +394,7 @@ begin
 	--///////////////////////////////////////	
 	-----------------------------------------
 	--systrig_o   <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
-	systrig_o   <= 'Z'; -- don't use differential output over mini-sas
+	systrig_o   <= '0'; -- don't use differential output over mini-sas
 	sma_aux0_io <= (((coinc_trig_internal and registers(93)(0)) or (internal_delayed_pps and registers(93)(8))) and (not registers(99)(0)))
 							or internal_sync_out; 
 	--

@@ -374,16 +374,32 @@ proc_sample_shift : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
 		--fill the arrays, again should compactify this code
-		for i in 3 to 0 loop 
-			rx_data_pipe0_ch0(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch0(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe0_ch1(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch1(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe0_ch2(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch2(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe0_ch3(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe0_ch3(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe1_ch4(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch4(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe1_ch5(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch5(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe1_ch6(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch6(16*(i+1)-1 downto 16*(i+1)-16);
-			rx_data_pipe1_ch7(16*(i+1)+15 downto 16*(i+1)) <= rx_data_pipe1_ch7(16*(i+1)-1 downto 16*(i+1)-16);
-		end loop;
+		rx_data_pipe0_ch0(63 downto 48) <= rx_data_pipe0_ch0(47 downto 32);
+		rx_data_pipe0_ch0(47 downto 32) <= rx_data_pipe0_ch0(31 downto 16);
+		rx_data_pipe0_ch0(31 downto 16) <= rx_data_pipe0_ch0(15 downto 0);
+		rx_data_pipe0_ch1(63 downto 48) <= rx_data_pipe0_ch1(47 downto 32);
+		rx_data_pipe0_ch1(47 downto 32) <= rx_data_pipe0_ch1(31 downto 16);
+		rx_data_pipe0_ch1(31 downto 16) <= rx_data_pipe0_ch1(15 downto 0);
+		rx_data_pipe0_ch2(63 downto 48) <= rx_data_pipe0_ch2(47 downto 32);
+		rx_data_pipe0_ch2(47 downto 32) <= rx_data_pipe0_ch2(31 downto 16);
+		rx_data_pipe0_ch2(31 downto 16) <= rx_data_pipe0_ch2(15 downto 0);
+		rx_data_pipe0_ch3(63 downto 48) <= rx_data_pipe0_ch3(47 downto 32);
+		rx_data_pipe0_ch3(47 downto 32) <= rx_data_pipe0_ch3(31 downto 16);
+		rx_data_pipe0_ch3(31 downto 16) <= rx_data_pipe0_ch3(15 downto 0);
+		
+		rx_data_pipe1_ch4(63 downto 48) <= rx_data_pipe1_ch4(47 downto 32);
+		rx_data_pipe1_ch4(47 downto 32) <= rx_data_pipe1_ch4(31 downto 16);
+		rx_data_pipe1_ch4(31 downto 16) <= rx_data_pipe1_ch4(15 downto 0);
+		rx_data_pipe1_ch5(63 downto 48) <= rx_data_pipe1_ch5(47 downto 32);
+		rx_data_pipe1_ch5(47 downto 32) <= rx_data_pipe1_ch5(31 downto 16);
+		rx_data_pipe1_ch5(31 downto 16) <= rx_data_pipe1_ch5(15 downto 0);
+		rx_data_pipe1_ch6(63 downto 48) <= rx_data_pipe1_ch6(47 downto 32);
+		rx_data_pipe1_ch6(47 downto 32) <= rx_data_pipe1_ch6(31 downto 16);
+		rx_data_pipe1_ch6(31 downto 16) <= rx_data_pipe1_ch6(15 downto 0);
+		rx_data_pipe1_ch7(63 downto 48) <= rx_data_pipe1_ch7(47 downto 32);
+		rx_data_pipe1_ch7(47 downto 32) <= rx_data_pipe1_ch7(31 downto 16);
+		rx_data_pipe1_ch7(31 downto 16) <= rx_data_pipe1_ch7(15 downto 0);
+		
 		--rx_data_pipe0_ch1(63 downto 32) <= rx_data_pipe0_ch1(31 downto 0);
 		--rx_data_pipe1_ch2(63 downto 32) <= rx_data_pipe1_ch2(31 downto 0);
 		--rx_data_pipe1_ch3(63 downto 32) <= rx_data_pipe1_ch3(31 downto 0);
