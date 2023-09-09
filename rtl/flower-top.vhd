@@ -61,7 +61,7 @@ Port(
 	systrig_i			: in	std_logic;
 	systrig_o			: out	std_logic;
 	sync_i				: in	std_logic;
-	gpio_sas_io			: inout std_logic_vector(3 downto 0); --gpio(0) is the pps
+	gpio_sas_io			: inout std_logic_vector(3 downto 0); --gpio(0) is the pps, *gpio(2) is the data-ready interrupt out
 	gpio_board_io		: inout std_logic_vector(6 downto 0); --gpios 5 & 6 are on-board LEDs
 	biastee_sel_o		: out std_logic_vector(7 downto 0);	
 	sma_aux0_io			: out  std_logic;  --*define 0 as output
@@ -272,6 +272,7 @@ begin
 		phase_trig_i=> '0', --doesn't exist yet
 		ext_trig_i	=> sma_aux1_io, --use SMA1 for ext trig input. Make selectable?
 		pps_i			=> internal_delayed_pps, --gpio_sas_io(0), 
+		dat_rdy_o	=> gpio_sas_io(2),
 		latched_timestamp_o  => latched_timestamp,
 		status_reg_o	 => event_manager_status_reg,
 		ram_write_o		 => event_ram_write_en,

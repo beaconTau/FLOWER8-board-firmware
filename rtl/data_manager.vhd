@@ -39,6 +39,7 @@ port(
 		phase_trig_i:	in		std_logic;
 		ext_trig_i	:  in		std_logic;
 		pps_i			:	in		std_logic;
+		dat_rdy_o	:	out	std_logic; --to gpio for BBB interrupt 
 		
 		latched_timestamp_o : buffer std_logic_vector(47 downto 0);
 		status_reg_o : out 	std_logic_vector(23 downto 0);
@@ -190,6 +191,8 @@ begin
 		
 	end if;
 end process;	
+------------------------------------
+dat_rdy_o <= internal_buffer_full;
 ------------------------------------
 --control data RAM and latch metadata
 proc_record_event : process(rst_i, clk_data_i, internal_trig_to_save_data, maximum_ram_address)
