@@ -58,8 +58,8 @@ Port(
 	board_clock_i		: in	std_logic; --on-board oscillator
 	sys_clock_i			: in	std_logic; --LVDS, from PLL
 	--world interfacing
-	systrig_i			: in	std_logic;
-	systrig_o			: out	std_logic;
+	systrig_i			: in	std_logic; --lvds D12p/E12n
+	systrig_o			: out	std_logic; --lvds B12p/A12n, note these are moved in terradaq such that the boards are trying to drive each other
 	sync_i				: in	std_logic;
 	gpio_sas_io			: inout std_logic_vector(3 downto 0); --gpio(0) is the pps, *gpio(2) is the data-ready interrupt out
 	gpio_board_io		: inout std_logic_vector(6 downto 0); --gpios 5 & 6 are on-board LEDs
@@ -81,16 +81,16 @@ architecture rtl of flower_top is
 
 	---------------------------------------
 	--//FIRMWARE DETAILS--
-	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"00";
+	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"10"; --start all terra/8channel versions at 16
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"08";
-	constant fw_year			: std_logic_vector(11 downto 0) := x"7E6"; 
+	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"16";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"09";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
 	signal clock_internal_10MHz_loc		:	std_logic;	
-	signal clock_internal_core				:	std_logic; --118MHz, presently. derived from system clock
+	signal clock_internal_core				:	std_logic; --*125MHz, presently. derived from system clock
 	signal clock_internal_2MHz				:	std_logic;		
 	signal clock_internal_1Hz				:	std_logic;		
 	signal clock_internal_10Hz				:	std_logic;		
@@ -188,6 +188,7 @@ architecture rtl of flower_top is
 	end component;
 
 begin
+	systrig_o <= 'Z'; --this will break compile for flower/radiant setup, only for 2-flower terradaq
 
 	--//test LED
 	gpio_board_io(5) <= gpio_sas_io(0); --clock_internal_1Hz;
