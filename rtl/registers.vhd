@@ -238,22 +238,23 @@ begin
 			internal_sync_slave_true_reg(0)  <=  write_reg_i(1);
 		end if;
 		----
+		--<<>> 9/10/23 *this needs to be moved to the main register assigment flow, otherwise overwritten by general else statement
 		--handle master/slave differently, both on falling edge conditions
 		--->master register gets written when the sync register is released
-		if internal_sync_master_true_reg = "10" then
-			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
-			address_o <= register_address_sync_hold;
-		end if;
-		--->slave register gets written when there is a falling edge condition on the external sync input (e.g. trigger)
-		------ with additional slave_sync_register still high
-		if internal_sync_command_from_master = "10" and internal_sync_slave_true_reg(0) = '1' then
-			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
-			address_o <= register_address_sync_hold;
-		end if;
+--		if internal_sync_master_true_reg = "10" then
+--			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+--			address_o <= register_address_sync_hold;
+--		end if;
+--		--->slave register gets written when there is a falling edge condition on the external sync input (e.g. trigger)
+--		------ with additional slave_sync_register still high
+--		if internal_sync_command_from_master = "10" and internal_sync_slave_true_reg(0) = '1' then
+--			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+--			address_o <= register_address_sync_hold;
+--		end if;
 			
 		internal_sync_master_true_reg(1) <= internal_sync_master_true_reg(0);
 		internal_sync_slave_true_reg(1) <= internal_sync_slave_true_reg(0);
-		internal_sync_command_from_master <= internal_sync_command_from_master(0) & sync_i;
+		internal_sync_command_from_master <= internal_sync_command_from_master(0) & sync_i; --external SMA input
 		--//------------------------------------------------------------------------------
 		--//------------------------------------------------------------------------------
 		--main register control stuff
@@ -291,7 +292,21 @@ begin
 --			end case;
 --			address_o <= x"47";  --//initiate a read
 --			
-			
+		---------------------------------	
+		--* syncing stuff ***
+		--handle master/slave differently, both on falling edge conditions
+		--->master register gets written when the sync register is released
+		elsif internal_sync_master_true_reg = "10" then
+			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+			address_o <= register_address_sync_hold;
+		
+		--->slave register gets written when there is a falling edge condition on the external sync input (e.g. trigger)
+		------ with additional slave_sync_register still high
+		elsif internal_sync_command_from_master = "10" and internal_sync_slave_true_reg(0) = '1' then
+			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
+			address_o <= register_address_sync_hold;
+		--* end syncing stuff ***
+		---------------------------------
 		---------------------------------
 		--//write register value, in sync mode
 		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and (internal_sync_master_true_reg(0) = '1'  or
