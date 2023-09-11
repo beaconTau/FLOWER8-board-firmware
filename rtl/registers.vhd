@@ -63,6 +63,8 @@ architecture rtl of registers_spi is
 -------------------------
 signal unique_chip_id		: std_logic_vector(63 downto 0) := (others=>'1');
 signal unique_chip_id_rdy	: std_logic;
+signal internal_master_true_flag 	 : std_logic;
+signal internal_slave_true_flag		 : std_logic;
 signal internal_sync_master_true_reg : std_logic_vector(1 downto 0) := "00";
 signal internal_sync_slave_true_reg  : std_logic_vector(1 downto 0) :="00";
 signal internal_sync_command_from_master  : std_logic_vector(1 downto 0) :="00";
@@ -209,6 +211,8 @@ begin
 		read_reg_o 	<= x"00" & registers_io(1); 
 		address_o 	<= x"00";
 		
+		internal_master_true_flag <= '0';
+		internal_slave_true_flag <= '0';
 		internal_sync_master_true_reg <= "00";
 		internal_sync_slave_true_reg <= "00";
 		internal_sync_command_from_master <= "00";
@@ -232,10 +236,11 @@ begin
 		registers_io(45)	<= pps_timestamp_to_read_i(47 downto 24);
 		--//------------------------------------------------------------------------------
 		--//------------------------------------------------------------------------------
-		--sync stuff, grab register here, separate from main handling flow
+		--sync stuff, grab register here, separate from main handling flow:
+		-- make rise/fall edge-conditions reg = "01" when enabled, reg= "10" when disabled. janky
 		if write_rdy_i = '1' and write_reg_i(31 downto 24) = address_reg_multi_board_sync then
-			internal_sync_master_true_reg(0) <=  write_reg_i(0);
-			internal_sync_slave_true_reg(0)  <=  write_reg_i(1);
+			internal_master_true_flag <=  write_reg_i(0);
+			internal_slave_true_flag  <=  write_reg_i(1);
 		end if;
 		----
 		--<<>> 9/10/23 *this needs to be moved to the main register assigment flow, otherwise overwritten by general else statement
@@ -252,9 +257,10 @@ begin
 --			address_o <= register_address_sync_hold;
 --		end if;
 			
-		internal_sync_master_true_reg(1) <= internal_sync_master_true_reg(0);
-		internal_sync_slave_true_reg(1) <= internal_sync_slave_true_reg(0);
-		internal_sync_command_from_master <= internal_sync_command_from_master(0) & sync_i; --external SMA input
+
+		internal_sync_master_true_reg(1 downto 0) <= internal_sync_master_true_reg(0) & internal_master_true_flag;
+		internal_sync_slave_true_reg(1 downto 0) <= internal_sync_slave_true_reg(0) & internal_slave_true_flag;
+		internal_sync_command_from_master(1 downto 0) <= internal_sync_command_from_master(0) & sync_i; --external SMA input
 		--//------------------------------------------------------------------------------
 		--//------------------------------------------------------------------------------
 		--main register control stuff
@@ -296,21 +302,21 @@ begin
 		--* syncing stuff ***
 		--handle master/slave differently, both on falling edge conditions
 		--->master register gets written when the sync register is released
-		elsif internal_sync_master_true_reg = "10" then
+		elsif internal_sync_master_true_reg(1 downto 0) = "10" then
 			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
 			address_o <= register_address_sync_hold;
 		
 		--->slave register gets written when there is a falling edge condition on the external sync input (e.g. trigger)
 		------ with additional slave_sync_register still high
-		elsif internal_sync_command_from_master = "10" and internal_sync_slave_true_reg(0) = '1' then
+		elsif internal_sync_command_from_master(1 downto 0) = "10" and internal_sync_slave_true_reg(0) = '1' then
 			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
 			address_o <= register_address_sync_hold;
 		--* end syncing stuff ***
 		---------------------------------
 		---------------------------------
-		--//write register value, in sync mode
-		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and (internal_sync_master_true_reg(0) = '1'  or
-					internal_sync_slave_true_reg(0) = '1') then
+		--//write and hold register value, in sync mode
+		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and write_reg_i(31 downto 24) /= address_reg_multi_board_sync and 
+					(internal_sync_master_true_reg = "11"  or internal_sync_slave_true_reg =  "11") then
 				register_value_sync_hold <= write_reg_i(23 downto 0);
 				register_address_sync_hold <= write_reg_i(31 downto 24);
 
