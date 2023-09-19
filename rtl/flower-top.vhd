@@ -82,10 +82,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"10"; --start all terra/8channel versions at 16
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"02";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"01";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"0B";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"12";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	signal clock_internal_10MHz_sys		:	std_logic;	
@@ -172,6 +172,7 @@ architecture rtl of flower_top is
 	signal internal_delayed_pps : std_logic := '0';
 	signal internal_pps_cycle_counter : std_logic_Vector(47 downto 0);
 	signal internal_sync_out : std_logic;
+	signal internal_pps_fast_sync_flag : std_logic;
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -236,9 +237,9 @@ begin
 		CLK1_i			=> sys_clock_i,
 		PLL_reset_i		=>	'0',--clock_FPGA_PLLrst,		
 		CLK_2MHz_o		=> clock_internal_2MHz,		
-		CLK_10MHz_loc_o=> clock_internal_10MHz_loc,
+		CLK_10MHz_loc_o=> clock_internal_10MHz_loc, 
 		CLK_10MHz_sys_o=> clock_internal_10MHz_sys,
-		CLK_core_sys_o => clock_internal_core, --//118MHz at the moment
+		CLK_core_sys_o => clock_internal_core, --//*125MHz at the moment
 		CLK_1Hz_o		=> clock_internal_1Hz,
 		CLK_10Hz_o		=> clock_internal_10Hz,
 		CLK_1kHz_o		=> clock_internal_1kHz,	
@@ -266,7 +267,7 @@ begin
 	xDATA_MANAGER : entity work.data_manager
 	port map(
 		rst_i			=> reset_power_on,
-		clk_i			=> clock_internal_10MHz_loc,
+		clk_i			=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		coinc_trig_i=> coinc_trig_internal,
@@ -286,7 +287,7 @@ begin
 	port map(
 		rst_powerup_i			=> reset_power_on,
 		rst_i						=> reset_power_on,
-		clk_i						=> clock_internal_10MHz_loc,  --//clock for register interface
+		clk_i						=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,  --//clock for register interface
 		-----------------------------
 		--//status/read-only registers
 		firmware_date_i					=> fw_year & fw_month & fw_day,
@@ -318,7 +319,7 @@ begin
 	--//PC interface SPI comms.:
 	xPCINTERFACE : entity work.cpu_interface
 	port map(
-		clk_i			 => clock_internal_10MHz_loc,
+		clk_i			 => clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
 		rst_i			 => reset_power_on,
 		spi_cs_i	 	 => spi_cs_i,	
 		spi_sclk_i	 => spi_sclk_i,	
@@ -337,7 +338,7 @@ begin
 	xSPI_I2C_BRIDGE : entity work.spi_to_i2c_bridge
 	port map(
 		reset_i		 => reset_power_on,	
-		clk_i			 => clock_internal_10MHz_loc,		
+		clk_i			 => clock_internal_10MHz_loc, --clock_internal_10MHz_loc,		
 		registers_i  => registers, 	
 		address_i	 => register_adr,	
 		i2c_read_o	 => data_to_read_i2c,	
@@ -420,18 +421,19 @@ begin
 	xGLOBAL_TIMING : entity work.pps_timing
 	port map(
 		rst_i			=> reset_power_on,
-		clk_i			=> clock_internal_10MHz_loc, 
+		clk_i			=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc, 
 		clk_10MHz_i	=> clock_internal_10MHz_sys,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		pps_i			=>	gpio_sas_io(0),
 		pps_o			=> internal_delayed_pps,
+		pps_fast_flag_o => internal_pps_fast_sync_flag,
 		pps_cycle_counter_o => internal_pps_cycle_counter); 
 	-----------------------------------------
 	xSCALERS : entity work.scalers_top
 	port map(
 		rst_i					=> reset_power_on,
-		clk_i					=> clock_internal_10MHz_loc,
+		clk_i					=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
 		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
@@ -442,10 +444,12 @@ begin
 	--//pulse from FPGA to RF input switches for ADC alignment
 	xCALPULSE : entity work.calpulse	
 	port map(
-		rst_i		=> reset_power_on,	
-		clk_i		=> clock_internal_core,			
+		rst_i		=> reset_power_on,
+		clk_reg_i=> clock_internal_10MHz_loc,	
+		clk_i		=> clock_internal_core,		
 		reg_i		=> registers,	
-		pulse_o	=> cal_pulse_o,	
+		pulse_o	=> cal_pulse_o,
+		pps_fast_sync_i => internal_pps_fast_sync_flag,
 		rf_switch_o => cal_sel_o); --//when cal_sel_o = 1 ==> signal path	
 	-----------------------------------------
 	--///////////////////////////////////////
@@ -453,8 +457,8 @@ begin
 	xREMOTE_FIRMWARE_UPGRADE :  entity work.remote_firmware_update_top
 	port map(
 		rst_i				=> reset_power_on,	
-		clk_10MHz_i		=> clock_internal_10MHz_loc,
-		clk_i				=> clock_internal_10MHz_loc,
+		clk_10MHz_i		=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
+		clk_i				=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
 		registers_i		=> registers,
 		stat_reg_o		=> remote_upgrade_status,
 		epcq_rd_data_o => remote_upgrade_epcq_data,

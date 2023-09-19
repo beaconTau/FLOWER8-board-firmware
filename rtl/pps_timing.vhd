@@ -32,6 +32,7 @@ port(
 		registers_i	:	in		register_array_type;
 		pps_i			:  in		std_logic;
 		pps_o			:	out	std_logic; -- delayed pps output
+		pps_fast_flag_o : out	std_logic;  --for board synchronization
 		pps_cycle_counter_o : out	std_logic_vector(47 downto 0)
 		
 		);
@@ -99,12 +100,17 @@ begin
 		internal_pps_fast_counter <= (others=>'0');
 		internal_pps_fast_counter_start <= '0';
 		internal_pps_fast_counter_latched <= (others=>'0');
+		pps_fast_flag_o <= '0';
 		
 	elsif rising_edge(clk_data_i) then
 		internal_pps_fast_reg <= internal_pps_fast_reg(0) & pps_i; --rising edge condition
 		--run counter every-other pps cycle using start signal
 		if internal_pps_fast_reg = "01" then --pps_i rising-edge caught
 			internal_pps_fast_counter_start <= not internal_pps_fast_counter_start;
+			pps_fast_flag_o <= '1';
+		else
+			internal_pps_fast_counter_start <= internal_pps_fast_counter_start;
+			pps_fast_flag_o <= '0';
 		end if;
 		--dumb way of latching and resetting counter
 		if internal_pps_fast_counter_start = '0' and internal_pps_fast_reg = "10" then

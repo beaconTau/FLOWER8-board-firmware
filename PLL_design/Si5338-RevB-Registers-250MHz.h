@@ -1,7 +1,7 @@
 //Register map for use with AN428 (JumpStart)
 //http://www.skyworksinc.com/timing
 //#BEGIN_HEADER
-//Date = Wednesday, August 30, 2023 1:16 PM
+//Date = Monday, September 18, 2023 2:26 PM
 //File version = 3
 //Software Name = ClockBuilder Pro
 //Software version = 4.11.0.0
@@ -10,7 +10,7 @@
 //Part Number = Si533x
 //#END_HEADER
 //Input Frequency (MHz) = 10.000000000
-//Input Type = CMOS_SSTL_HSTL
+//Input Type = LVDS_LVPECL_HCSL
 //P1 = 1
 //Input Mux = RefClk
 //FDBK Input Frequency (MHz) = 10.000000000
@@ -115,8 +115,8 @@ Reg_Data const code Reg_Store[NUM_REGS_MAX] = {
 { 25,0x00,0x00},
 { 26,0x00,0x00},
 { 27,0xF0,0x80},
-{ 28,0x2B,0xFF},
-{ 29,0x08,0xFF},
+{ 28,0x23,0xFF},
+{ 29,0x00,0xFF},
 { 30,0x48,0xFF},
 { 31,0xC0,0xFF},
 { 32,0xC0,0xFF},
