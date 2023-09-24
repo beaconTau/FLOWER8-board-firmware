@@ -34,8 +34,7 @@ entity readout_controller is
 		tx_rdy_o					:	out	std_logic;  --// tx ready flag
 		tx_rdy_spi_i			:	in		std_logic;  --// spi_slave tx_rdy signal
 		tx_ack_i					:	in		std_logic;  --//tx ack from spi_slave (newer spi_slave module ONLY)
-	
-		rdout_fpga_data_o		:	out		std_logic_vector(d_width-1 downto 0)); --//data to send off-fpga
+		rdout_fpga_data_o		:	out	std_logic_vector(d_width-1 downto 0)); --//data to send off-fpga
 		
 end readout_controller;
 

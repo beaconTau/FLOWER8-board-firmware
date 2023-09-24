@@ -22,7 +22,7 @@ module  pll_block_2_0002(
 		.reference_clock_frequency("10.0 MHz"),
 		.operation_mode("direct"),
 		.number_of_clocks(2),
-		.output_clock_frequency0("10.000000 MHz"),
+		.output_clock_frequency0("20.000000 MHz"),
 		.phase_shift0("0 ps"),
 		.duty_cycle0(50),
 		.output_clock_frequency1("125.000000 MHz"),

@@ -85,11 +85,13 @@ architecture rtl of flower_top is
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"03";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"13";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"18";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
-	signal clock_internal_10MHz_sys		:	std_logic;	
-	signal clock_internal_10MHz_loc		:	std_logic;	
+	--signal clock_internal_10MHz_sys		:	std_logic;
+	signal clock_internal_20MHz_sys		:	std_logic;	
+	signal clock_internal_10MHz_loc		:	std_logic;
+	signal clock_internal_20MHz_loc		:  std_logic;
 	signal clock_internal_core				:	std_logic; --*125MHz, presently. derived from system clock
 	signal clock_internal_2MHz				:	std_logic;		
 	signal clock_internal_1Hz				:	std_logic;		
@@ -215,9 +217,9 @@ begin
 		data_in	      => share_asmi_sdoin,
 		data_oe 			=> share_asmi_dataoe,
 		data_out			=> share_asmi_dataout);
-	proc_share_asmi : process(clock_internal_10MHz_loc)
+	proc_share_asmi : process(clock_internal_20MHz_loc)
 	begin
-		if rising_edge(clock_internal_10MHz_loc) then
+		if rising_edge(clock_internal_20MHz_loc) then
 			if registers(110)(0) = '1' then --remote upgrade block gets access to asmi interface
 				serial_flash_asmi_access_grant_int<= '0';
 			elsif serial_flash_asmi_access_req_int = '1' then
@@ -240,7 +242,8 @@ begin
 		PLL_reset_i		=>	'0',--clock_FPGA_PLLrst,		
 		CLK_2MHz_o		=> clock_internal_2MHz,		
 		CLK_10MHz_loc_o=> clock_internal_10MHz_loc, 
-		CLK_10MHz_sys_o=> clock_internal_10MHz_sys,
+		CLK_20MHz_loc_o=> clock_internal_20MHz_loc,
+		CLK_20MHz_sys_o=> clock_internal_20MHz_sys, --clock_internal_10MHz_sys,
 		CLK_core_sys_o => clock_internal_core, --//*125MHz at the moment
 		CLK_1Hz_o		=> clock_internal_1Hz,
 		CLK_10Hz_o		=> clock_internal_10Hz,
@@ -254,7 +257,7 @@ begin
 	xREADOUT_CONTROLLER : entity work.readout_controller
 	port map(
 		rst_i						=> reset_power_on,
-		clk_i						=> clock_internal_10MHz_loc,
+		clk_i						=> clock_internal_20MHz_loc,
 		rdout_reg_i				=> register_to_read,  --//read register
 		reg_adr_i				=> register_adr,
 		registers_i				=> registers,         
@@ -269,7 +272,7 @@ begin
 	xDATA_MANAGER : entity work.data_manager
 	port map(
 		rst_i			=> reset_power_on,
-		clk_i			=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
+		clk_i			=> clock_internal_20MHz_loc, --clock_internal_10MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		coinc_trig_i=> coinc_trig_internal,
@@ -289,7 +292,7 @@ begin
 	port map(
 		rst_powerup_i			=> reset_power_on,
 		rst_i						=> reset_power_on,
-		clk_i						=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,  --//clock for register interface
+		clk_i						=> clock_internal_20MHz_loc, --clock_internal_10MHz_loc,  --//clock for register interface
 		-----------------------------
 		--//status/read-only registers
 		firmware_date_i					=> fw_year & fw_month & fw_day,
@@ -321,7 +324,7 @@ begin
 	--//PC interface SPI comms.:
 	xPCINTERFACE : entity work.cpu_interface
 	port map(
-		clk_i			 => clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
+		clk_i			 => clock_internal_20MHz_loc, --clock_internal_10MHz_loc,
 		rst_i			 => reset_power_on,
 		spi_cs_i	 	 => spi_cs_i,	
 		spi_sclk_i	 => spi_sclk_i,	
@@ -340,7 +343,7 @@ begin
 	xSPI_I2C_BRIDGE : entity work.spi_to_i2c_bridge
 	port map(
 		reset_i		 => reset_power_on,	
-		clk_i			 => clock_internal_10MHz_loc, --clock_internal_10MHz_loc,		
+		clk_i			 => clock_internal_20MHz_loc, --clock_internal_10MHz_loc,		
 		registers_i  => registers, 	
 		address_i	 => register_adr,	
 		i2c_read_o	 => data_to_read_i2c,	
@@ -351,7 +354,7 @@ begin
 	--//hmcad151x configuration:		
 	xADC_CONTROL : entity work.adc_controller
 	port map(
-		rst_i => reset_power_on, 	clk_i	=> clock_internal_10MHz_loc,			
+		rst_i => reset_power_on, 	clk_i	=> clock_internal_20MHz_loc,			
 		registers_i	=> registers, 	reg_addr_i => register_adr,
 		sdat0_o => adc0_spi_sdata_o, sclk0_o => adc0_spi_sclk_o,	
 		csn0_o => adc0_spi_csn_o, rstn0_o=>adc0_spi_resetn_o, pd0_o	=> adc0_pd_o,		
@@ -379,7 +382,7 @@ begin
 	xADC0_DATA_RX : entity work.adc_receiver
 	generic map(adc_data_parallel_width)
 	port map(
-		rst_i => reset_power_on, clk_i=> clock_internal_core, clk_reg_i => clock_internal_10MHz_loc,
+		rst_i => reset_power_on, clk_i=> clock_internal_core, clk_reg_i => clock_internal_20MHz_loc,
 		registers_i	=> registers,
 		adc_dA_i	=> adc0_dA_i,   	adc_dB_i => adc0_dB_i,
 		adc_fclk_i => adc0_fclk_i, adc_lclk_i => adc0_lclk_i, serdes_clk_o => serdes_outclk_0,
@@ -389,7 +392,7 @@ begin
 	xADC1_DATA_RX : entity work.adc_receiver
 	generic map(adc_data_parallel_width)
 	port map(
-		rst_i => reset_power_on, clk_i=> clock_internal_core, clk_reg_i => clock_internal_10MHz_loc,
+		rst_i => reset_power_on, clk_i=> clock_internal_core, clk_reg_i => clock_internal_20MHz_loc,
 		registers_i	=> registers,
 		adc_dA_i	=> adc1_dA_i,   	adc_dB_i => adc1_dB_i,
 		adc_fclk_i => adc1_fclk_i, adc_lclk_i => adc1_lclk_i, serdes_clk_o => serdes_outclk_1,
@@ -406,7 +409,7 @@ begin
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
 		rst_i			=> reset_power_on,
-		clk_i			=> clock_internal_10MHz_loc,
+		clk_i			=> clock_internal_20MHz_loc,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		ch0_data_i	=> ch0_data,
@@ -423,8 +426,8 @@ begin
 	xGLOBAL_TIMING : entity work.pps_timing
 	port map(
 		rst_i			=> reset_power_on,
-		clk_i			=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc, 
-		clk_10MHz_i	=> clock_internal_10MHz_sys,
+		clk_i			=> clock_internal_20MHz_loc, --clock_internal_10MHz_loc, 
+		clk_10MHz_i	=> clock_internal_20MHz_sys,
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		pps_i			=>	gpio_sas_io(0),
@@ -435,7 +438,7 @@ begin
 	xSCALERS : entity work.scalers_top
 	port map(
 		rst_i					=> reset_power_on,
-		clk_i					=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
+		clk_i					=> clock_internal_20MHz_loc, --clock_internal_10MHz_loc,
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
 		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
@@ -447,7 +450,7 @@ begin
 	xCALPULSE : entity work.calpulse	
 	port map(
 		rst_i		=> reset_power_on,
-		clk_reg_i=> clock_internal_10MHz_loc,	
+		clk_reg_i=> clock_internal_20MHz_loc,	
 		clk_i		=> clock_internal_core,		
 		reg_i		=> registers,	
 		pulse_o	=> cal_pulse_o,
@@ -460,7 +463,7 @@ begin
 	port map(
 		rst_i				=> reset_power_on,	
 		clk_10MHz_i		=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
-		clk_i				=> clock_internal_10MHz_loc, --clock_internal_10MHz_loc,
+		clk_i				=> clock_internal_20MHz_loc, --clock_internal_10MHz_loc, --// register clock
 		registers_i		=> registers,
 		stat_reg_o		=> remote_upgrade_status,
 		epcq_rd_data_o => remote_upgrade_epcq_data,

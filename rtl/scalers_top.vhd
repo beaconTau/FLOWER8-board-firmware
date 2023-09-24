@@ -20,6 +20,7 @@ use work.defs.all;
 
 entity scalers_top is
 	generic(
+	   addr_top_scaler_rate_select: std_logic_vector(7 downto 0) := x"2F";
 		scaler_width   : integer := 12);
 	port(
 		rst_i				:		in		std_logic;
@@ -49,10 +50,10 @@ signal refresh_clk_100Hz				:	std_logic := '0';
 signal refresh_clk_1Hz				:	std_logic := '0';
 signal refresh_clk_100mHz			:	std_logic := '0';
 --//for 10 MHz
-constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";   
+constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"0030D40"; -- x"00186A0";   
 --constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
-constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"0989680";  
-constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"5F5E100";  	
+constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"1312D00"; --x"0989680";  
+constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"BEBC200"; --x"5F5E100";  	
 component scaler
 port(
 	rst_i 		: in 	std_logic;
@@ -99,7 +100,8 @@ CoincTrigScalers100Hz : for i in 0 to 19 generate
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
-		refresh_i => refresh_clk_100Hz,
+		refresh_i => (refresh_clk_100mHz and (not reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0))) or
+		             (refresh_clk_100Hz and reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0)),
 		count_i => coinc_trig_bits_i(i),
 		scaler_o => internal_scaler_array(i+40));
 end generate;

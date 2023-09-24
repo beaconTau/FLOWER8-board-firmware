@@ -27,7 +27,7 @@ generic(
 port(
 		rst_i			:	in		std_logic;
 		clk_i			:	in		std_logic; --register clock 
-		clk_10MHz_i	:	in		std_logic; --10MHz system
+		clk_10MHz_i	:	in		std_logic; --10MHz system // *now 20MHz
 		clk_data_i	:	in		std_logic; --data clock 118MHz
 		registers_i	:	in		register_array_type;
 		pps_i			:  in		std_logic;

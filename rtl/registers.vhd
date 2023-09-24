@@ -153,8 +153,8 @@ begin
 		--registers_io(43) <= x"000001"; --//cal pulse pattern, maybe make this configurable? -> probably a timing nightmare since on 250 MHz clock? 
 		
 		--//OLD surface trigger stuff
-		registers_io(46) <= x"380914"; --//lower byte = vpp threshold ; 
-		registers_io(47) <= x"01000A"; --//
+		registers_io(46) <= x"000000"; --//lower byte = vpp threshold ; 
+		registers_io(47) <= x"000000"; --//top scaler rate [100mHz (default) or 100Hz, set by LSB]
 		registers_io(73) <= x"000000"; --//
 		registers_io(74) <= x"000000"; --//surface readout select: toggle LSB to readout surface, when LSB=0 (default)->deep readout
 
@@ -172,25 +172,31 @@ begin
 
 		--//trigger thresholds:
 		--registers_io(base_adrs_trig_thresh+0) <= x"0FFFFF";   --//[86]
-		registers_io(87) <= x"000000";   --//[87] coinc trig
-		registers_io(88) <= x"000000";   --//[88] coinc trig
-		registers_io(89) <= x"000000";   --//[89] coinc trig
-		registers_io(90) <= x"000000";   --//[90] coinc trig
-		registers_io(91) <= x"000200";   --//[91] coinc trig
-		registers_io(92) <= x"000001";   --//[92] systrigout config
-		registers_io(93) <= x"000000";   --//[93] sma trig_out config
-		registers_io(94) <= x"000001";   --//[94] pps trig delay
+		registers_io(86) <= x"000000";   --//[87] coinc trig ch0
+		registers_io(87) <= x"000000";   --//[88] coinc trig ch1
+		registers_io(88) <= x"000000";   --//[89] coinc trig ch2
+		registers_io(89) <= x"000000";   --//[90] coinc trig ch3
+		registers_io(90) <= x"000000";   --//[90] coinc trig ch4
+		registers_io(91) <= x"000000";   --//[90] coinc trig ch5
+		registers_io(92) <= x"000000";   --//[90] coinc trig ch6
+		registers_io(93) <= x"000000";   --//[90] coinc trig ch7
 
+		registers_io(94) <= x"000001";   --//[94] pps trig delay
+		registers_io(95) <= x"000200";   --//[95] coinc trig settings
+		registers_io(96) <= x"000001";   --//[96] systrigout config
+		registers_io(97) <= x"000000";   --//[93] sma trig_out config
 		
-		registers_io(base_adrs_trig_thresh+9) <= x"0FFFFF";   --//[95]
-		registers_io(base_adrs_trig_thresh+10) <= x"0FFFFF";   --//[96]
-		registers_io(base_adrs_trig_thresh+11) <= x"0FFFFF";   --//[97]
-		registers_io(base_adrs_trig_thresh+12) <= x"0FFFFF";   --//[98]
-		registers_io(base_adrs_trig_thresh+13) <= x"0FFFFF";   --//[99]
-		registers_io(base_adrs_trig_thresh+14) <= x"0FFFFF";   --//[100]
-		registers_io(base_adrs_trig_thresh+15) <= x"0FFFFF";   --//[101]
+		registers_io(99) <= x"000000";   --//terrdaq sync reg
 		
-		registers_io(base_adrs_trig_thresh+16) <= x"0FFFFF";   --//[102] --hpol surface trig threshold
+		--registers_io(base_adrs_trig_thresh+9) <= x"0FFFFF";   --//[95]
+		--registers_io(base_adrs_trig_thresh+10) <= x"0FFFFF";   --//[96]
+		--registers_io(base_adrs_trig_thresh+11) <= x"0FFFFF";   --//[97]
+		--registers_io(base_adrs_trig_thresh+12) <= x"0FFFFF";   --//[98]
+		--registers_io(base_adrs_trig_thresh+13) <= x"0FFFFF";   --//[99]
+		--registers_io(base_adrs_trig_thresh+14) <= x"0FFFFF";   --//[100]
+		--registers_io(base_adrs_trig_thresh+15) <= x"0FFFFF";   --//[101]
+		
+		--registers_io(base_adrs_trig_thresh+16) <= x"0FFFFF";   --//[102] --hpol surface trig threshold
 
 		--//remote upgrade registers
 		registers_io(110) <= x"000000"; --//LSB = 1 to enable remote upgrade block
