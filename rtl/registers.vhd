@@ -248,6 +248,7 @@ begin
 			internal_master_true_flag <=  write_reg_i(0);
 			internal_slave_true_flag  <=  write_reg_i(1);
 		end if;
+		
 		----
 		--<<>> 9/10/23 *this needs to be moved to the main register assigment flow, otherwise overwritten by general else statement
 		--handle master/slave differently, both on falling edge conditions
