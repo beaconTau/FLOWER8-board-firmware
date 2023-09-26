@@ -244,10 +244,14 @@ begin
 		--//------------------------------------------------------------------------------
 		--sync stuff, grab register here, separate from main handling flow:
 		-- make rise/fall edge-conditions reg = "01" when enabled, reg= "10" when disabled. janky
-		if write_rdy_i = '1' and write_reg_i(31 downto 24) = address_reg_multi_board_sync then
-			internal_master_true_flag <=  write_reg_i(0);
-			internal_slave_true_flag  <=  write_reg_i(1);
-		end if;
+		
+		--if write_rdy_i = '1' and write_reg_i(31 downto 24) = address_reg_multi_board_sync then
+		--	internal_master_true_flag <=  write_reg_i(0);
+		--	internal_slave_true_flag  <=  write_reg_i(1);
+		--end if;
+		--> replaces the above, but without an the additional flow control
+		internal_master_true_flag <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(0);
+		internal_slave_true_flag  <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(1);
 		
 		----
 		--<<>> 9/10/23 *this needs to be moved to the main register assigment flow, otherwise overwritten by general else statement

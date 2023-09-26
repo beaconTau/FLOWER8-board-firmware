@@ -50,10 +50,10 @@ signal refresh_clk_100Hz				:	std_logic := '0';
 signal refresh_clk_1Hz				:	std_logic := '0';
 signal refresh_clk_100mHz			:	std_logic := '0';
 --//for 10 MHz
-constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"0030D40"; -- x"00186A0";   
+constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"003DD90"; -- x"00186A0";   
 --constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
-constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"1312D00"; --x"0989680";  
-constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"BEBC200"; --x"5F5E100";  	
+constant REFRESH_CLK_MATCH_1HZ 		: 	std_logic_vector(27 downto 0) 	:= x"17D7840"; --x"0989680";  
+constant REFRESH_CLK_MATCH_100mHz 	: 	std_logic_vector(27 downto 0) 	:= x"EE6B280"; --x"5F5E100";  	
 component scaler
 port(
 	rst_i 		: in 	std_logic;
