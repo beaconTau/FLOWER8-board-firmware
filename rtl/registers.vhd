@@ -250,8 +250,8 @@ begin
 		--	internal_slave_true_flag  <=  write_reg_i(1);
 		--end if;
 		--> replaces the above, but without an the additional flow control
-		internal_master_true_flag <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(0);
-		internal_slave_true_flag  <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(1);
+		--internal_master_true_flag <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(0);
+		--internal_slave_true_flag  <= registers_io(to_integer(unsigned(address_reg_multi_board_sync)))(1);
 		
 		----
 		--<<>> 9/10/23 *this needs to be moved to the main register assigment flow, otherwise overwritten by general else statement
@@ -275,8 +275,15 @@ begin
 		--//------------------------------------------------------------------------------
 		--//------------------------------------------------------------------------------
 		--main register control stuff
-		--//read register command
-		if write_rdy_i = '1' and write_reg_i(31 downto 24) = x"6D" then
+		--//make the sync reg primary, if captured
+		if write_rdy_i = '1' and write_reg_i(31 downto 24) = address_reg_multi_board_sync then
+			internal_master_true_flag <=  write_reg_i(0);
+			internal_slave_true_flag  <=  write_reg_i(1);
+			registers_io(to_integer(unsigned(write_reg_i(31 downto 24)))) <= write_reg_i(23 downto 0);
+			address_o <= write_reg_i(31 downto 24);
+			
+		--//read register command	
+		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) = x"6D" then
 			read_reg_o <=  write_reg_i(7 downto 0) & registers_io(to_integer(unsigned(write_reg_i(7 downto 0))));
 			address_o <= x"47";  --//initiate a read	
 		
