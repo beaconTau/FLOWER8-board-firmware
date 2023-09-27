@@ -68,15 +68,14 @@ begin
 -------------------------------------------------------------------------------
 --proc_assign_scalers_to_metadata : running_scalers_o <= internal_scaler_array(32) & internal_scaler_array(0);
 -------------------------------------------------------------------------------
-proc_top_scaler_refresh_rate : process(clk_i)
+proc_top_scaler_refresh_rate : process(reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0))
 begin
-if rising_edge(clk_i) then
-	if reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0) = '1' then
+case  reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0) is
+	when '1' =>
 		internal_100Hz_or_100mHz_refresh <= refresh_clk_100Hz;
-	else
+	when others =>
 		internal_100Hz_or_100mHz_refresh <= refresh_clk_100mHz;
-	end if;
-end if;
+	end case;
 end process;
 		
 --//scaler 63 is the `scaler pps'
