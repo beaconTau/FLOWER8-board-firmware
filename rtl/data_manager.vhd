@@ -31,8 +31,8 @@ generic(
 
 port(
 		rst_i			:	in		std_logic;
-		clk_i			:	in		std_logic; --register clock 10MHz
-		clk_data_i	:	in		std_logic; --data clock 118MHz
+		clk_i			:	in		std_logic; --register clock 25MHz
+		clk_data_i	:	in		std_logic; --data clock 125MHz
 		registers_i	:	in		register_array_type;
 		
 		coinc_trig_i:  in		std_logic;
@@ -75,6 +75,13 @@ signal maximum_ram_address : std_logic_vector(9 downto 0) := (others=>'1');
 
 signal internal_metadata_array : event_metadata_type;
 signal internal_latch_time_reg : std_logic_vector(1 downto 0) := "00";
+--signals/flags to put on the fast clock domain:
+signal internal_clear_buffer_full : std_logic := '0';
+signal internal_latched_time : std_logic:= '0';
+signal internal_reset_counters : std_logic:= '0';
+signal internal_software_trig_from_reg : std_logic:= '0';
+signal internal_ext_trig_en : std_logic;
+signal internal_pps_trig_en : std_logic;
 
 type data_save_state_type is (idle, write_ram, buffer_full);
 signal data_save_state : data_save_state_type;
@@ -86,6 +93,14 @@ port(
 		SignalIn_clkA	: in	std_logic;
 		SignalOut_clkB	: out	std_logic);
 end component;
+component flag_sync is
+port(
+		clkA			: in	std_logic;
+		clkB			: in	std_logic;
+		in_clkA		: in	std_logic;
+		busy_clkA	: out	std_logic;
+		out_clkB		: out std_logic);
+end component;
 ------------------------------------
 begin
 ------------------------------------
@@ -93,31 +108,32 @@ begin
 process(clk_data_i)
 begin
 	if rst_i = '1' then
-		internal_sw_trig_reg <= (others=>'0');
+		--internal_sw_trig_reg <= (others=>'0');
 		internal_ext_trig_reg <= (others=>'0');
 		internal_pps_trig_reg <= (others=>'0');
 	elsif rising_edge(clk_data_i) then
-		internal_sw_trig_reg <= internal_sw_trig_reg(0) & (registers_i(to_integer(unsigned(address_reg_sw_trig)))(0));
+		--internal_sw_trig_reg <= internal_sw_trig_reg(0) & (registers_i(to_integer(unsigned(address_reg_sw_trig)))(0));
 		internal_ext_trig_reg <= internal_ext_trig_reg(0) & ext_trig_i; --rising edge condition
 		internal_pps_trig_reg <= internal_pps_trig_reg(0) & pps_i; --rising edge condition
 	end if;
 end process;
 
 proc_make_trig_pulse : process(clk_data_i, internal_sw_trig_reg, internal_ext_trig_reg,		                        
-										coinc_trig_i, phase_trig_i)
+										coinc_trig_i, phase_trig_i, internal_software_trig_from_reg)
 begin
 	if rising_edge(clk_data_i) then
-		if internal_sw_trig_reg = "01" then	
+		--if internal_sw_trig_reg = "01" then	
+		if internal_software_trig_from_reg = '1' then
 			internal_Sw_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_Sw_trig <= '0';
 		end if;
-		if internal_ext_trig_reg = "01" and registers_i(to_integer(unsigned(address_trigger_enables)))(16) = '1' then	
+		if internal_ext_trig_reg = "01" and internal_ext_trig_en = '1' then	
 			internal_ext_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_ext_trig <= '0';
 		end if;
-		if internal_pps_trig_reg = "01" and registers_i(to_integer(unsigned(address_trigger_enables)))(0) = '1' then	
+		if internal_pps_trig_reg = "01" and internal_pps_trig_en = '1' then	
 			internal_pps_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_pps_trig <= '0';
@@ -146,7 +162,7 @@ begin
 end process;
 ------------------------------------
 --timestamping / counters:
-proc_meta_counters : process(clk_data_i, internal_trig_to_save_data, internal_write_busy)
+proc_meta_counters : process(clk_data_i, internal_trig_to_save_data, internal_write_busy, internal_latched_time, internal_reset_counters)
 begin
 	if rst_i = '1' then
 		internal_event_timestamp_counter <= (others=>'0');
@@ -157,7 +173,8 @@ begin
 		latched_timestamp_o <= (others=>'0');
 		internal_latch_time_reg <= (others=>'0');
 	--software reset condition:
-	elsif rising_edge(clk_data_i) and registers_i(to_integer(unsigned(address_reg_reset_evt_counters )))(0) = '1' then
+	--elsif rising_edge(clk_data_i) and registers_i(to_integer(unsigned(address_reg_reset_evt_counters )))(0) = '1' then
+	elsif rising_edge(clk_data_i) and internal_reset_counters = '1' then
 		internal_event_timestamp_counter <= (others=>'0');
 		internal_running_timestamp <= (others=>'0');
 		internal_event_counter <= (others=>'0');
@@ -168,8 +185,9 @@ begin
 	--incrementationing
 	elsif rising_edge(clk_data_i) then
 		internal_running_timestamp <= internal_running_timestamp + 1;
-		internal_latch_time_reg <= internal_latch_time_reg(0) & registers_i(to_integer(unsigned(address_reg_latch_time)))(0);
-		
+		--internal_latch_time_reg <= internal_latch_time_reg(0) & registers_i(to_integer(unsigned(address_reg_latch_time)))(0);
+		--internal_latch_time_reg <= internal_latch_time_reg(0) & internal_latch_time;
+
 		if internal_trig_to_save_data = '1' then
 			internal_trigger_counter <= internal_trigger_counter + 1;
 			internal_event_timestamp_counter <= internal_running_timestamp;
@@ -185,7 +203,8 @@ begin
 			internal_event_counter <= internal_event_counter + 1;
 		end if;
 		--latched timestamp
-		if internal_latch_time_reg = "01" then
+		--if internal_latch_time_reg = "01" then
+		if internal_latched_time = '1' then
 			latched_timestamp_o <= internal_running_timestamp;
 		end if;
 		
@@ -238,7 +257,7 @@ begin
 				internal_buffer_full <= '1';
 				ram_write_o <= '0';
 				ram_write_adr_o <= ram_write_adr_o;
-				if registers_i(to_integer(unsigned(address_reg_clear_buffer_full )))(0) = '1' then
+				if internal_clear_buffer_full = '1' then
 					data_save_state <= idle;
 				else
 					data_save_state <= buffer_full;
@@ -273,4 +292,46 @@ MAX_ADDRESS : for i in 0 to 9 generate
 		SignalOut_clkB	=> maximum_ram_address(i));
 end generate;
 ------------------------------------
+xBUFF_CLEAR : flag_sync
+port map(
+	clkA				=> clk_i,
+	clkB				=> clk_data_i,
+	in_clkA	=> registers_i(to_integer(unsigned(address_reg_clear_buffer_full )))(0), 
+	busy_clkA => open,
+	out_clkB	=> internal_clear_buffer_full);
+------------------------------------
+xRESET_COUNTERS : flag_sync
+port map(
+	clkA				=> clk_i,
+	clkB				=> clk_data_i,
+	in_clkA	=> registers_i(to_integer(unsigned(address_reg_reset_evt_counters )))(0), 
+	busy_clkA => open,
+	out_clkB	=> internal_reset_counters);
+------------------------------------
+xLATCH_TIME : flag_sync
+port map(
+	clkA				=> clk_i,
+	clkB				=> clk_data_i,
+	in_clkA	=> registers_i(to_integer(unsigned(address_reg_latch_time)))(0), 
+	busy_clkA => open,
+	out_clkB	=> internal_latched_time);
+------------------------------------
+xSW_TRIG : flag_sync
+port map(
+	clkA				=> clk_i,
+	clkB				=> clk_data_i,
+	in_clkA	=> registers_i(to_integer(unsigned(address_reg_sw_trig)))(0), 
+	busy_clkA => open,
+	out_clkB	=> internal_software_trig_from_reg);
+------------------------------------	
+xEXT_TRIG_EN_SYNC : signal_sync
+port map(
+	clkA	=> clk_i, clkB	=> clk_data_i,
+	SignalIn_clkA	=> registers_i(to_integer(unsigned(address_trigger_enables)))(16), 
+	SignalOut_clkB	=> internal_ext_trig_en);
+xPPS_TRIG_EN_SYNC  : signal_sync
+port map(
+	clkA	=> clk_i, clkB	=> clk_data_i,
+	SignalIn_clkA	=> registers_i(to_integer(unsigned(address_trigger_enables)))(0), 
+	SignalOut_clkB	=> internal_pps_trig_en);
 end rtl;

@@ -62,7 +62,8 @@ begin
 data_h(0) <= '1'; --//single hi bit for pulse
 proc_freq_sel : process(reg_i(to_integer(unsigned(address_reg_cal_pulse)))(8))
 begin
-case reg_i(42)(8) is
+if rising_edge(clk_reg_i) then
+	case reg_i(42)(8) is
 	when '0' =>
 		data_h(128) <= '1';
 		data_h(256) <= '1';
@@ -79,7 +80,8 @@ case reg_i(42)(8) is
 		data_h(640) <= '0';
 		data_h(768) <= '0';
 		data_h(896) <= '0';
-end case;
+	end case;
+end if;
 end process;
 ----///////////
 rf_switch_o <= not (reg_i(to_integer(unsigned(address_reg_cal_pulse)))(1)); --//set rf switch input selection [reg(42)(1) = 1 --> switch to pulse ;; reg(42)(1) = 0 --> switch to signal chain] 

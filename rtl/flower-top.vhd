@@ -82,10 +82,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"10"; --start all terra/8channel versions at 16
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"04";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"05";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"1A";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"1B";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	--signal clock_internal_10MHz_sys		:	std_logic;

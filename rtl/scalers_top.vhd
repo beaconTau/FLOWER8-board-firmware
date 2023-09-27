@@ -49,6 +49,7 @@ signal refresh_clk_counter_100mHz:	std_logic_vector(27 downto 0) := (others=>'0'
 signal refresh_clk_100Hz				:	std_logic := '0';
 signal refresh_clk_1Hz				:	std_logic := '0';
 signal refresh_clk_100mHz			:	std_logic := '0';
+signal internal_100Hz_or_100mHz_refresh : std_logic := '0';
 --//for 10 MHz
 constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"003DD90"; -- x"00186A0";   
 --constant REFRESH_CLK_MATCH_100Hz 		: 	std_logic_vector(27 downto 0) := x"00186A0";  
@@ -67,6 +68,17 @@ begin
 -------------------------------------------------------------------------------
 --proc_assign_scalers_to_metadata : running_scalers_o <= internal_scaler_array(32) & internal_scaler_array(0);
 -------------------------------------------------------------------------------
+proc_top_scaler_refresh_rate : process(clk_i)
+begin
+if rising_edge(clk_i) then
+	if reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0) = '1' then
+		internal_100Hz_or_100mHz_refresh <= refresh_clk_100Hz;
+	else
+		internal_100Hz_or_100mHz_refresh <= refresh_clk_100mHz;
+	end if;
+end if;
+end process;
+		
 --//scaler 63 is the `scaler pps'
 proc_scaler_pps : process(clk_i, refresh_clk_1Hz)
 begin
@@ -100,8 +112,7 @@ CoincTrigScalers100Hz : for i in 0 to 19 generate
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
-		refresh_i => (refresh_clk_100mHz and (not reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0))) or
-		             (refresh_clk_100Hz and reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0)),
+		refresh_i => internal_100Hz_or_100mHz_refresh,
 		count_i => coinc_trig_bits_i(i),
 		scaler_o => internal_scaler_array(i+40));
 end generate;

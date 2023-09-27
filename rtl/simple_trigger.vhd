@@ -174,7 +174,7 @@ for i in 0 to 7 loop
 				channel_trig_reg(i)(0) <= '0';
 		elsif channel_trig_lo(i) = '1' and channel_trig_hi(i) = '1' and vppmode_int = '1' then
 				channel_trig_reg(i)(0) <= '1';
-		elsif channel_trig_lo(i) = '1' and vppmode_int = '0' then
+		elsif (channel_trig_lo(i) = '1' or channel_trig_hi(i) = '1') and vppmode_int = '0' then
 				channel_trig_reg(i)(0) <= '1';
 		end if;
 		--------------------
@@ -208,7 +208,7 @@ for i in 0 to 7 loop
 				channel_servo_reg(i)(0) <= '0';
 		elsif channel_servo_lo(i) = '1' and channel_servo_hi(i) = '1' and vppmode_int = '1' then
 				channel_servo_reg(i)(0) <= '1';
-		elsif channel_servo_lo(i) = '1' and vppmode_int = '0' then
+		elsif (channel_servo_lo(i) = '1' or channel_servo_hi(i) = '1')  and vppmode_int = '0' then
 				channel_servo_reg(i)(0) <= '1';
 		end if;
 		----------------------------------------------
