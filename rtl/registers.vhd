@@ -65,8 +65,8 @@ signal unique_chip_id		: std_logic_vector(63 downto 0) := (others=>'1');
 signal unique_chip_id_rdy	: std_logic;
 signal internal_master_true_flag 	 : std_logic;
 signal internal_slave_true_flag		 : std_logic;
-signal internal_sync_master_true_reg : std_logic_vector(1 downto 0) := "00";
-signal internal_sync_slave_true_reg  : std_logic_vector(1 downto 0) :="00";
+signal internal_sync_master_true_reg : std_logic_vector(2 downto 0) := "000";
+signal internal_sync_slave_true_reg  : std_logic_vector(2 downto 0) :="000";
 signal internal_sync_command_from_master  : std_logic_vector(1 downto 0) :="00";
 signal register_value_sync_hold   		: std_logic_vector(23 downto 0) := (others=>'0');
 signal register_address_sync_hold  		: std_logic_vector(7 downto 0)  := (others=>'0');
@@ -185,6 +185,7 @@ begin
 		registers_io(95) <= x"000200";   --//[95] coinc trig settings
 		registers_io(96) <= x"000001";   --//[96] systrigout config
 		registers_io(97) <= x"000000";   --//[93] sma trig_out config
+		registers_io(98) <= x"0000FF";   --//trigger channel mask
 		
 		registers_io(99) <= x"000000";   --//terrdaq sync reg
 		
@@ -219,8 +220,8 @@ begin
 		
 		internal_master_true_flag <= '0';
 		internal_slave_true_flag <= '0';
-		internal_sync_master_true_reg <= "00";
-		internal_sync_slave_true_reg <= "00";
+		internal_sync_master_true_reg <= "000";
+		internal_sync_slave_true_reg <= "000";
 		internal_sync_command_from_master <= "00";
 		register_value_sync_hold <= (others=>'0');
 		register_address_sync_hold <= (others=>'0');
@@ -269,8 +270,8 @@ begin
 --		end if;
 			
 
-		internal_sync_master_true_reg(1 downto 0) <= internal_sync_master_true_reg(0) & internal_master_true_flag;
-		internal_sync_slave_true_reg(1 downto 0) <= internal_sync_slave_true_reg(0) & internal_slave_true_flag;
+		internal_sync_master_true_reg(2 downto 0) <= internal_sync_master_true_reg(1 downto 0) & internal_master_true_flag;
+		internal_sync_slave_true_reg(2 downto 0) <= internal_sync_slave_true_reg(1 downto 0) & internal_slave_true_flag;
 		internal_sync_command_from_master(1 downto 0) <= internal_sync_command_from_master(0) & sync_i; --external SMA input
 		--//------------------------------------------------------------------------------
 		--//------------------------------------------------------------------------------
@@ -319,8 +320,9 @@ begin
 		---------------------------------	
 		--* syncing stuff ***
 		--handle master/slave differently, both on falling edge conditions
-		--->master register gets written when the sync register is released
-		elsif internal_sync_master_true_reg(1 downto 0) = "10" then
+		--->master register gets written when the sync register is released, note this is delayed one clock cycle vs. the 'slave' board,
+		------> which receives the sync from the 'master' that will be behind by a clock cycle
+		elsif internal_sync_master_true_reg(2 downto 0) = "100" then
 			registers_io(to_integer(unsigned(register_address_sync_hold))) <= register_value_sync_hold;
 			address_o <= register_address_sync_hold;
 		
@@ -334,14 +336,14 @@ begin
 		---------------------------------
 		--//write and hold register value, in sync mode
 		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and write_reg_i(31 downto 24) /= address_reg_multi_board_sync and 
-					(internal_sync_master_true_reg = "11"  or internal_sync_slave_true_reg =  "11") then
+					(internal_sync_master_true_reg(1) = '1'  or internal_sync_slave_true_reg(1) =  '1') then
 				register_value_sync_hold <= write_reg_i(23 downto 0);
 				register_address_sync_hold <= write_reg_i(31 downto 24);
 
 		----------------------------------
 		--//write register value, in normal non-sync mode
 		elsif write_rdy_i = '1' and write_reg_i(31 downto 24) > x"27" and internal_sync_master_true_reg = "00"  and
-					internal_sync_slave_true_reg = "00" then  --//read/write registers
+					internal_sync_slave_true_reg = "000"  then  --//read/write registers
 				registers_io(to_integer(unsigned(write_reg_i(31 downto 24)))) <= write_reg_i(23 downto 0);
 				address_o <= write_reg_i(31 downto 24);
 		----------------------------------

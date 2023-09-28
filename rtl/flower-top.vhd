@@ -82,10 +82,10 @@ architecture rtl of flower_top is
 	---------------------------------------
 	--//FIRMWARE DETAILS--
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"10"; --start all terra/8channel versions at 16
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"05";
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"08";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
 	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"1B";
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"1C";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	--signal clock_internal_10MHz_sys		:	std_logic;
@@ -162,6 +162,7 @@ architecture rtl of flower_top is
 	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
 	signal coinc_trig_internal : std_logic;
+	signal trig_bits_metadata : std_logic_vector(7 downto 0);
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
 	signal event_metadata : event_metadata_type;
@@ -172,9 +173,14 @@ architecture rtl of flower_top is
 	signal latched_timestamp : std_logic_Vector(47 downto 0);
 	--//pps
 	signal internal_delayed_pps : std_logic := '0';
-	signal internal_pps_cycle_counter : std_logic_Vector(47 downto 0);
+	signal internal_pps_cycle_counter : std_logic_vector(47 downto 0);
 	signal internal_sync_out : std_logic;
 	signal internal_pps_fast_sync_flag : std_logic;
+	signal internal_sma_trigger_input_assign : std_logic;
+	signal internal_sma_sync_input_assign : std_logic;
+	signal internal_coinc_trig_to_out_sma_en : std_logic := '0';
+	signal internal_event_write_busy : std_logic := '0'; --flag if busy writing event to ram, or buffer still full
+
 	---------------------------------------
 	--//altera active-serial loader (for jtag->serial flash programming)
 	--// extra complicated due to also having remote update -- needs to share asmi interface
@@ -188,6 +194,14 @@ architecture rtl of flower_top is
 		data_in	      : in std_logic_vector(3 downto 0);
 		data_oe 			: in std_logic_vector(3 downto 0);
 		data_out			: out std_logic_Vector(3 downto 0));
+	end component;
+	---------------------------------------
+	component signal_sync is
+	port(
+		clkA			: in	std_logic;
+		clkB			: in	std_logic;
+		SignalIn_clkA	: in	std_logic;
+		SignalOut_clkB	: out	std_logic);
 	end component;
 
 begin
@@ -277,9 +291,11 @@ begin
 		registers_i	=> registers,
 		coinc_trig_i=> coinc_trig_internal,
 		phase_trig_i=> '0', --doesn't exist yet
-		ext_trig_i	=> sma_aux1_io, --use SMA1 for ext trig input. Make selectable?
+		ext_trig_i	=> internal_sma_trigger_input_assign, --(sma_aux1_io and (not registers(99)(1))), --use SMA1 for ext trig input. If assigned as secondary board in sync scheme, ignore
 		pps_i			=> internal_delayed_pps, --gpio_sas_io(0), 
+		trig_bits_metadata_i => trig_bits_metadata,
 		dat_rdy_o	=> gpio_sas_io(2),
+		event_write_busy_o => internal_event_write_busy,
 		latched_timestamp_o  => latched_timestamp,
 		status_reg_o	 => event_manager_status_reg,
 		ram_write_o		 => event_ram_write_en,
@@ -316,7 +332,7 @@ begin
 		write_rdy_i		=> spi_rx_rdy,
 		read_reg_o 		=> register_to_read,
 		registers_io	=> registers, --//system register space
-		sync_i 			=> sma_aux1_io,
+		sync_i 			=> internal_sma_sync_input_assign,
 		sync_o			=> internal_sync_out,
 		address_o		=> register_adr);	
 	--///////////////////////////////////////	
@@ -403,9 +419,37 @@ begin
 	-----------------------------------------
 	--systrig_o   <= (coinc_trig_internal and registers(92)(0)) or (internal_delayed_pps and registers(92)(8)); 
 	systrig_o   <= '0'; -- don't use differential output over mini-sas
-	sma_aux0_io <= (((coinc_trig_internal and registers(96)(0)) or (internal_delayed_pps and registers(96)(8))) and (not registers(99)(0)))
-							or internal_sync_out; 
-	--
+	-----------------------------------------
+	-----------------------------------------
+	proc_assign_sma_output : process(registers(99)(0))
+	begin
+	case registers(99)(0) is
+		when '1' =>
+			sma_aux0_io <= internal_sync_out;
+		when '0' => 
+			sma_aux0_io <= coinc_trig_internal and internal_coinc_trig_to_out_sma_en and (not internal_event_write_busy);
+	end case;
+	end process;
+	
+	proc_assign_sma_input : process(registers(99)(1))
+	begin
+	case registers(99)(1) is
+		when '1' =>
+			internal_sma_trigger_input_assign <= '0'; --ignore if assigned as secondary board in sync-mode
+			internal_sma_sync_input_assign <= sma_aux1_io;
+		when '0' => 
+			internal_sma_trigger_input_assign <= sma_aux1_io;
+			internal_sma_sync_input_assign <= '0';
+	end case;
+	end process;
+	---	
+	xCOINC_TRIG_OUTPUT_EN : signal_sync
+	port map(
+	clkA	=> clock_internal_25MHz_loc, clkB => clock_internal_core,
+	SignalIn_clkA	=> registers(96)(0), 
+	SignalOut_clkB	=> internal_coinc_trig_to_out_sma_en);
+	-----------------------------------------
+	-----------------------------------------
 	xCOINC_TRIG : entity work.simple_trigger
 	port map(
 		rst_i			=> reset_power_on,
@@ -420,6 +464,7 @@ begin
 		ch5_data_i	=> ch5_data, 
 		ch6_data_i	=> ch6_data, 
 		ch7_data_i	=> ch7_data,
+		last_trig_bits_latched_o => trig_bits_metadata,
 		trig_bits_o => coinc_trig_scaler_bits,
 		coinc_trig_o=> coinc_trig_internal);
 	-----------------------------------------

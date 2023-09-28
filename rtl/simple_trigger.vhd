@@ -27,6 +27,7 @@ generic(
 		coinc_trig_reg_base	: std_logic_vector(7 downto 0):= x"56"; --moved in FLOWER8
 		--//reg for coinc trig params
 		coinc_trig_param_reg	: std_logic_vector(7 downto 0):= x"5F"; --moved in FLOWER8
+		coinc_trig_channel_mask_reg	: std_logic_vector(7 downto 0):= x"62"; --new in FLOWER8
 		address_reg_pps_delay: std_logic_vector(7 downto 0) := x"5E" 
 		);
 
@@ -45,6 +46,7 @@ port(
 		ch6_data_i	:	in		std_logic_vector(31 downto 0);
 		ch7_data_i	:	in		std_logic_vector(31 downto 0);
 		
+		last_trig_bits_latched_o : out std_logic_vector(7 downto 0); --for metadata
 		trig_bits_o : 	out	std_logic_vector(23 downto 0); --for scalers
 		coinc_trig_o: 	out	std_logic --trigger
 		);
@@ -74,6 +76,8 @@ signal servo_clear			: std_logic_vector(7 downto 0);
 signal trig_counter			: threshold_array; --/not a threshold, but data type works
 signal servo_counter			: threshold_array;
 
+--signal last_trig_bits_latched : std_logic_vector(7 downto 0);
+
 signal trig_array_for_scalers : std_logic_vector(23 downto 0); --//on clk_data_i
 
 signal coincidence_trigger_reg : std_logic_vector(1 downto 0);
@@ -82,6 +86,8 @@ signal coincidence_servo_reg : std_logic_vector(1 downto 0);
 signal coincidence_servo : std_logic; --one clk_data_i period
 
 signal internal_coinc_trig_en : std_logic := '0'; --enable this trigger block from sw
+signal internal_trigger_channel_mask : std_logic_vector(7 downto 0);
+signal bits_for_coincidence: threshold_array;
 
 signal coinc_window_int	: std_logic_vector(7 downto 0) := x"02"; --//num of clk_data_i periods
 constant baseline			: std_logic_vector(7 downto 0) := x"80";
@@ -227,23 +233,29 @@ begin
 		coincidence_servo_reg <= "00";
 		coincidence_servo <= '0';  --the servo trigger
 
+		last_trig_bits_latched_o <= (others=>'0');
+		
 		for i in 0 to 7 loop
 			trig_clear(i) <= '0';
 			trig_counter(i) <= (others=>'0');
 			servo_clear(i) <= '0';
 			servo_counter(i) <= (others=>'0');
+			bits_for_coincidence(i) <= (others=>'0');
 		end loop;
 		
 	elsif rising_edge(clk_data_i) then
 		--loop over the channels
 		for i in 0 to 7 loop
+			--only bit 0 of each channel_trig_reg is used
+			bits_for_coincidence(i)(0) <= channel_trig_reg(i)(0) and internal_trigger_channel_mask(i) ;
+		
 			if trig_counter(i) = coinc_window_int then
 				trig_clear(i) <= '1';
 			else
 				trig_clear(i) <= '0';
 			end if;
 				
-			if channel_trig_reg(i)(0) = '1' then
+			if channel_trig_reg(i)(0) = '1'  then
 				trig_counter(i) <= trig_counter(i) + 1;
 			else
 				trig_counter(i) <= (others=>'0');
@@ -266,10 +278,10 @@ begin
 		
 		--//coinc requirement. Note that 1 channel required for trigger when 'coinc_require_int' == 0
 		--//note that only the LSB in each channel_trig_reg(ch)(xxx..) is populated
-		if to_integer(unsigned(channel_trig_reg(0))) + to_integer(unsigned(channel_trig_reg(1))) + 
-			to_integer(unsigned(channel_trig_reg(2))) + to_integer(unsigned(channel_trig_reg(3))) + 
-			to_integer(unsigned(channel_trig_reg(4))) + to_integer(unsigned(channel_trig_reg(5))) + 
-			to_integer(unsigned(channel_trig_reg(6))) + to_integer(unsigned(channel_trig_reg(7))) > to_integer(unsigned(coinc_require_int)) then
+		if to_integer(unsigned(bits_for_coincidence(0))) + to_integer(unsigned(bits_for_coincidence(1))) + 
+			to_integer(unsigned(bits_for_coincidence(2))) + to_integer(unsigned(bits_for_coincidence(3))) + 
+			to_integer(unsigned(bits_for_coincidence(4))) + to_integer(unsigned(bits_for_coincidence(6))) + 
+			to_integer(unsigned(bits_for_coincidence(6))) + to_integer(unsigned(bits_for_coincidence(7))) > to_integer(unsigned(coinc_require_int)) then
 			
 			coincidence_trigger_reg(0) <= '1';
 		
@@ -280,6 +292,9 @@ begin
 		coincidence_trigger_reg(1) <= coincidence_trigger_reg(0); --dumb way to trigger on "01", rising edge
 		if coincidence_trigger_reg = "01" then
 			coincidence_trigger <= '1';
+			--for i in 0 to 7 loop
+			--	last_trig_bits_latched_o(i) <= channel_trig_reg(i)(0);
+			--end loop;
 		else
 			coincidence_trigger <= '0';
 		end if;
@@ -336,6 +351,7 @@ COINCREQ : for i in 0 to 3 generate
 		SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_param_reg)))(i), --num_coinc_requirement (0,1,2 or 3, *or more [8ch version])
 		SignalOut_clkB	=> coinc_require_int(i));
 end generate;
+------------
 COINCWIN : for i in 0 to 7 generate
 	xCOINCWINSYNC : signal_sync
 		port map(
@@ -344,6 +360,15 @@ COINCWIN : for i in 0 to 7 generate
 		SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_param_reg)))(i+8), --coinc_window size
 		SignalOut_clkB	=> coinc_window_int(i));
 end generate;
+------------
+TRIGCHANMASK : for i in 0 to 7 generate
+	xTRIGCHANMASKSYNC : signal_sync
+		port map(
+		clkA	=> clk_i,   clkB	=> clk_data_i,
+		SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_channel_mask_reg)))(i), --trig channel mask
+		SignalOut_clkB	=> internal_trigger_channel_mask(i));
+end generate;
+------------
 xVPPMODESYNC : signal_sync
 	port map(
 	clkA				=> clk_i,
@@ -358,7 +383,7 @@ trig_array_for_scalers <=  "000000" & servo_clear(7) & servo_clear(6) &
 									trig_clear(4) & trig_clear(3) & trig_clear(2) & trig_clear(1) & 
 									trig_clear(0) & coincidence_trigger;
 ----TRIGGER OUT!!
-coinc_trig_o <= coincidence_trigger_reg(0); --use the variable-width reg signal instead of the coincidence_trigger to save 1 clk cycle of delay
+coinc_trig_o <= coincidence_trigger_reg(0); --coincidence_trigger; 
 --------------
 TrigToScalers	:	 for i in 0 to 23 generate
 	xTRIGSYNC : flag_sync

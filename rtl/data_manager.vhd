@@ -39,7 +39,9 @@ port(
 		phase_trig_i:	in		std_logic;
 		ext_trig_i	:  in		std_logic;
 		pps_i			:	in		std_logic;
+		trig_bits_metadata_i : in std_logic_vector(7 downto 0);
 		dat_rdy_o	:	out	std_logic; --to gpio for BBB interrupt 
+		event_write_busy_o : out std_logic;
 		
 		latched_timestamp_o : buffer std_logic_vector(47 downto 0);
 		status_reg_o : out 	std_logic_vector(23 downto 0);
@@ -56,7 +58,8 @@ signal internal_ext_trig_reg : std_logic_vector(1 downto 0);
 signal internal_ext_trig : std_logic := '0';          -- generate ext trigger from board
 signal internal_pps_trig_reg : std_logic_vector(1 downto 0); 
 signal internal_pps_trig : std_logic := '0';          
-signal internal_trig_to_save_data : std_logic:= '0'; -- signal to tell ram to save data
+--signal internal_trig_to_save_data : std_logic:= '0'; -- signal to tell ram to save data
+signal internal_trig_to_save_data : std_logic_vector(1 downto 0) := "00";
 
 --metadata stuff
 signal internal_trigger_type : std_logic_vector(3 downto 0) := "0000";
@@ -128,7 +131,8 @@ begin
 		else
 			internal_Sw_trig <= '0';
 		end if;
-		if internal_ext_trig_reg = "01" and internal_ext_trig_en = '1' then	
+		--if internal_ext_trig_reg = "01" and internal_ext_trig_en = '1' then
+		if ext_trig_i = '1' and internal_ext_trig_en = '1' then  --one clock cycle
 			internal_ext_trig <= '1'; --pulse for one clk_data_i cycle
 		else
 			internal_ext_trig <= '0';
@@ -139,23 +143,25 @@ begin
 			internal_pps_trig <= '0';
 		end if;
 		------------------------------
+		internal_trig_to_save_data(1) <= internal_trig_to_save_data(0);
+		------------------------------
 		if internal_Sw_trig = '1' then
-			internal_trig_to_save_data  <= '1';
+			internal_trig_to_save_data(0)  <= '1';
 			internal_trigger_type <= "0001";
 		elsif internal_ext_trig = '1' then
-			internal_trig_to_save_data  <= '1';
+			internal_trig_to_save_data(0)  <= '1';
 			internal_trigger_type <= "0010";
 		elsif coinc_trig_i = '1' then
-			internal_trig_to_save_data  <= '1';
+			internal_trig_to_save_data(0)  <= '1';
 			internal_trigger_type <= "0011";
 		elsif phase_trig_i = '1' then
-			internal_trig_to_save_data  <= '1';
+			internal_trig_to_save_data(0)  <= '1';
 			internal_trigger_type <= "0100";
 		elsif internal_pps_trig = '1' then
-			internal_trig_to_save_data  <= '1';
+			internal_trig_to_save_data(0)  <= '1';
 			internal_trigger_type <= "0101";
 		else
-			internal_trig_to_save_data  <= '0';
+			internal_trig_to_save_data(0)  <= '0';
 			internal_trigger_type <= internal_trigger_type; --hold last value
 		end if;
 	end if;
@@ -188,7 +194,7 @@ begin
 		--internal_latch_time_reg <= internal_latch_time_reg(0) & registers_i(to_integer(unsigned(address_reg_latch_time)))(0);
 		--internal_latch_time_reg <= internal_latch_time_reg(0) & internal_latch_time;
 
-		if internal_trig_to_save_data = '1' then
+		if internal_trig_to_save_data = "01" then --rising edge
 			internal_trigger_counter <= internal_trigger_counter + 1;
 			internal_event_timestamp_counter <= internal_running_timestamp;
 			internal_event_pps_counter <= internal_pps_counter;
@@ -222,6 +228,7 @@ begin
 		internal_metadata_array <= (others=>(others=>'0'));
 		internal_write_busy <= "00";
 		internal_buffer_full <= '0';
+		--
 		data_save_state <= idle;
 
 	elsif rising_edge(clk_data_i) then
@@ -232,8 +239,9 @@ begin
 				ram_write_o <= '0';
 				ram_write_adr_o <= (others=>'1');
 				internal_write_busy(0) <= '0';
+				event_write_busy_o <= '0';
 				internal_buffer_full <= '0';
-				if internal_trig_to_save_data = '1' then
+				if internal_trig_to_save_data = "01" then --rising_edge
 					data_save_state <= write_ram;
 				else
 					data_save_state <= idle;
@@ -242,10 +250,15 @@ begin
 			when write_ram=>
 				internal_write_busy(0) <= '1';
 				internal_buffer_full <= '0';
+				event_write_busy_o <= '1';
 				if ram_write_adr_o  = (maximum_ram_address - 1) then 
 					ram_write_o <= '0';
 					ram_write_adr_o <= ram_write_adr_o;
 					data_save_state <= buffer_full;
+				elsif internal_clear_buffer_full = '1' then --clear here too if necessary, I guess
+					ram_write_o <= '0';
+					ram_write_adr_o <= ram_write_adr_o;
+					data_save_state <= idle;
 				else
 					ram_write_o <= '1';
 					ram_write_adr_o <= ram_write_adr_o + 1;
@@ -255,6 +268,7 @@ begin
 			when buffer_full=>
 				internal_write_busy(0) <= '0';
 				internal_buffer_full <= '1';
+				event_write_busy_o <= '1';
 				ram_write_o <= '0';
 				ram_write_adr_o <= ram_write_adr_o;
 				if internal_clear_buffer_full = '1' then
@@ -262,6 +276,9 @@ begin
 				else
 					data_save_state <= buffer_full;
 				end if;
+			
+			when others=>
+				data_save_state <= idle;
 		end case;
 		------------------------------------
 		--latch event metadata using write busy signaling
@@ -272,6 +289,7 @@ begin
 			internal_metadata_array(3) <= internal_event_timestamp_counter(23 downto 0);
 			internal_metadata_array(4) <= internal_event_timestamp_counter(47 downto 24);
 			internal_metadata_array(5) <= x"0" & "000" & pps_i & x"00" & x"0" & internal_trigger_type;
+			internal_metadata_array(6) <= x"0000" & trig_bits_metadata_i;
 		end if;
 	end if;
 end process;	
