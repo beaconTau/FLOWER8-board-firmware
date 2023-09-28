@@ -228,6 +228,7 @@ begin
 		internal_metadata_array <= (others=>(others=>'0'));
 		internal_write_busy <= "00";
 		internal_buffer_full <= '0';
+		event_write_busy_o <= '0';
 		--
 		data_save_state <= idle;
 

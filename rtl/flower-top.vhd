@@ -427,6 +427,7 @@ begin
 		when '1' =>
 			sma_aux0_io <= internal_sync_out;
 		when '0' => 
+			--add logic with the event_write_busy, so that secondary board doesn't keep getting triggers while the event is being written
 			sma_aux0_io <= coinc_trig_internal and internal_coinc_trig_to_out_sma_en and (not internal_event_write_busy);
 	end case;
 	end process;
@@ -442,7 +443,8 @@ begin
 			internal_sma_sync_input_assign <= '0';
 	end case;
 	end process;
-	---	
+	-----------------------------------------
+	-----------------------------------------	
 	xCOINC_TRIG_OUTPUT_EN : signal_sync
 	port map(
 	clkA	=> clock_internal_25MHz_loc, clkB => clock_internal_core,
