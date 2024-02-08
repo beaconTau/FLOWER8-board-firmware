@@ -122,14 +122,15 @@ begin
 proc_pipeline_data : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
+		
 		streaming_data(0)(streaming_buffer_length*8-1 downto 0) <= streaming_data(0)((streaming_buffer_length-2)*8-1 downto 0) & ch0_data_i(15 downto 0); --there is only good data in the lower two bytes
 		streaming_data(1)(streaming_buffer_length*8-1 downto 0) <= streaming_data(1)((streaming_buffer_length-2)*8-1 downto 0) & ch1_data_i(15 downto 0);
 		streaming_data(2)(streaming_buffer_length*8-1 downto 0) <= streaming_data(2)((streaming_buffer_length-2)*8-1 downto 0) & ch2_data_i(15 downto 0);
 		streaming_data(3)(streaming_buffer_length*8-1 downto 0) <= streaming_data(3)((streaming_buffer_length-2)*8-1 downto 0) & ch3_data_i(15 downto 0);
-		streaming_data(4)(streaming_buffer_length*8-1 downto 0) <= streaming_data(4)((streaming_buffer_length-2)*8-1 downto 0) & ch4_data_i(15 downto 0); 
-		streaming_data(5)(streaming_buffer_length*8-1 downto 0) <= streaming_data(5)((streaming_buffer_length-2)*8-1 downto 0) & ch5_data_i(15 downto 0);
-		streaming_data(6)(streaming_buffer_length*8-1 downto 0) <= streaming_data(6)((streaming_buffer_length-2)*8-1 downto 0) & ch6_data_i(15 downto 0);
-		streaming_data(7)(streaming_buffer_length*8-1 downto 0) <= streaming_data(7)((streaming_buffer_length-2)*8-1 downto 0) & ch7_data_i(15 downto 0);
+		streaming_data(4)(streaming_buffer_length*8-1 downto 0) <= streaming_data(4)((streaming_buffer_length-2)*8-1 downto 0) & ch3_data_i(15 downto 0); 
+		streaming_data(5)(streaming_buffer_length*8-1 downto 0) <= streaming_data(5)((streaming_buffer_length-2)*8-1 downto 0) & ch4_data_i(15 downto 0);
+		streaming_data(6)(streaming_buffer_length*8-1 downto 0) <= streaming_data(6)((streaming_buffer_length-2)*8-1 downto 0) & ch5_data_i(15 downto 0);
+		streaming_data(7)(streaming_buffer_length*8-1 downto 0) <= streaming_data(7)((streaming_buffer_length-2)*8-1 downto 0) & ch6_data_i(15 downto 0);
 		--second streaming array for pipelining
 		--streaming_data_2(0) <= streaming_data(0);
 		--streaming_data_2(1) <= streaming_data(1);
@@ -162,7 +163,7 @@ begin
 		for i in 0 to num_beams-1 loop --loop over beams
 			for j in 0 to phased_sum_length-1 loop
 				--phased_beam_waves(i*phased_sum_length+j) <= unsigned(streaming_data(0)(beam_delays(i*num_channels)+4 downto beam_delays(i*num_channels)-4)) 
-				phased_beam_waves(i,j) <= resize(unsigned(streaming_data(0)(beam_delays(i,0)+4 downto beam_delays(i,0)-4)),11) 
+				phased_beam_waves(i,j) <= resize(unsigned(streaming_data(0)(beam_delays(i,0)+4 downto beam_delays(i,0)-4)),phased_sum_bits) 
 					+unsigned(streaming_data(1)(beam_delays(i,1)+4 downto beam_delays(i,1)-4))
 					+unsigned(streaming_data(2)(beam_delays(i,2)+4 downto beam_delays(i,2)-4))
 					+unsigned(streaming_data(3)(beam_delays(i,3)+4 downto beam_delays(i,3)-4))
@@ -184,7 +185,7 @@ begin
 	elsif rising_edge(clk_data_i) then
 		for i in 0 to num_beams-1 loop
 			for j in 0 to phased_sum_length-1 loop
-				phased_power(j,i)<=resize(phased_beam_waves(i,j)*phased_beam_waves(i,j),23);
+				phased_power(j,i)<=resize(phased_beam_waves(i,j)*phased_beam_waves(i,j),phased_sum_power_bits);
 			end loop;
 		end loop;
 	
@@ -201,7 +202,7 @@ begin
 		for i in 0 to num_beams-1 loop
 			power_sum(i)<=resize(phased_power(0,i)+phased_power(1,i)
 				+phased_power(2,i)+phased_power(3,i)
-				+phased_power(4,i)+phased_power(5,i),24);
+				+phased_power(4,i)+phased_power(5,i),power_sum_bits);
 		end loop;
 		
 	end if;
