@@ -81,11 +81,11 @@ architecture rtl of flower_top is
 
 	---------------------------------------
 	--//FIRMWARE DETAILS--
-	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"10"; --start all terra/8channel versions at 16
-	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"08";
-	constant fw_year			: std_logic_vector(11 downto 0) := x"7E7"; 
-	constant fw_month			: std_logic_vector(3 downto 0)  := x"9"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"1C";
+	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"11"; --start all terra/8channel versions at 16
+	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"00";
+	constant fw_year			: std_logic_vector(11 downto 0) := x"7E8"; 
+	constant fw_month			: std_logic_vector(3 downto 0)  := x"2"; 
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"05";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	--signal clock_internal_10MHz_sys		:	std_logic;
@@ -160,8 +160,10 @@ architecture rtl of flower_top is
 	signal ch6_data : std_logic_vector(31 downto 0);
 	signal ch7_data : std_logic_vector(31 downto 0);
 	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
+	signal phased_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
 	signal coinc_trig_internal : std_logic;
+	signal phased_trig_internal : std_logic;
 	signal trig_bits_metadata : std_logic_vector(7 downto 0);
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
@@ -290,7 +292,7 @@ begin
 		clk_data_i	=> clock_internal_core,
 		registers_i	=> registers,
 		coinc_trig_i=> coinc_trig_internal,
-		phase_trig_i=> '0', --doesn't exist yet
+		phase_trig_i=> phased_trig_internal, --exists :)
 		ext_trig_i	=> internal_sma_trigger_input_assign, --(sma_aux1_io and (not registers(99)(1))), --use SMA1 for ext trig input. If assigned as secondary board in sync scheme, ignore
 		pps_i			=> internal_delayed_pps, --gpio_sas_io(0), 
 		trig_bits_metadata_i => trig_bits_metadata,
@@ -452,7 +454,26 @@ begin
 	SignalOut_clkB	=> internal_coinc_trig_to_out_sma_en);
 	-----------------------------------------
 	-----------------------------------------
-	xCOINC_TRIG : entity work.simple_trigger
+	--xCOINC_TRIG : entity work.simple_trigger
+	--port map(
+	--	rst_i			=> reset_power_on,
+	--	clk_i			=> clock_internal_25MHz_loc,
+	--	clk_data_i	=> clock_internal_core,
+	--	registers_i	=> registers,
+	--	ch0_data_i	=> ch0_data,
+	--	ch1_data_i	=> ch1_data, 
+	--	ch2_data_i	=> ch2_data, 
+	--	ch3_data_i	=> ch3_data,
+	--	ch4_data_i	=> ch4_data,
+	--	ch5_data_i	=> ch5_data, 
+	--	ch6_data_i	=> ch6_data, 
+	--	ch7_data_i	=> ch7_data,
+	--	last_trig_bits_latched_o => trig_bits_metadata,
+	--	trig_bits_o => coinc_trig_scaler_bits,
+	--	coinc_trig_o=> coinc_trig_internal);
+	-----------------------------------------
+	-----------------------------------------
+	xPHASED_TRIG : entity work.phased_trigger
 	port map(
 		rst_i			=> reset_power_on,
 		clk_i			=> clock_internal_25MHz_loc,
@@ -467,8 +488,9 @@ begin
 		ch6_data_i	=> ch6_data, 
 		ch7_data_i	=> ch7_data,
 		last_trig_bits_latched_o => trig_bits_metadata,
-		trig_bits_o => coinc_trig_scaler_bits,
-		coinc_trig_o=> coinc_trig_internal);
+		trig_bits_o => phased_trig_scaler_bits,
+		phased_trig_o=> phased_trig_internal);
+	-----------------------------------------
 	-----------------------------------------
 	xGLOBAL_TIMING : entity work.pps_timing
 	port map(

@@ -72,6 +72,22 @@ constant define_wave2beam_hi_bit : integer := define_wave2beam_lo_bit + define_w
 constant define_beam_bits			: integer := define_wave2beam_bits+3; --//effective resolution increased by 3 bits (8 antennas)
 constant define_sign_bit			: integer := define_beam_bits;
 
+constant num_power_bits : integer :=12;
+
+constant streaming_buffer_length : integer :=92;
+constant phased_sum_length : integer :=8;
+constant num_channels : integer :=6;
+constant num_beams : integer :=20;
+
+constant phased_sum_bits : integer :=11;
+constant phased_sum_power_bits : integer :=22;
+constant power_sum_bits:integer :=25;
+
+type antenna_delays is array (num_beams-1 downto 0,num_channels-1 downto 0) of integer;
+constant beam_delays : antenna_delays := (others=>(others=>46));
+--constant beam_delays is array (num_beams-1 down to 0) of antenna_delay :=((46,24,54,58,49,72),(46,46,46,46,46,46),others<=(0,0,0,0,0,0)); --add base offset of 46
+
+
 --//data split up to samples
 --type beam_data_type is array (2*define_serdes_factor*define_word_size-1 downto 0) of 
 --	signed(define_beam_bits-1 downto 0);
