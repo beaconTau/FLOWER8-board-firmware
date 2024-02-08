@@ -45,7 +45,7 @@ port(
 		ch7_data_i	:	in		std_logic_vector(31 downto 0);
 		
 		last_trig_bits_latched_o : out std_logic_vector(num_beams-1 downto 0); --for metadata
-		trig_bits_o : 	out	std_logic_vector(2*num_beams downto 0); --for scalers
+		trig_bits_o : 	out	std_logic_vector(2*(num_beams+1) downto 0); --for scalers
 		
 		phased_trig_o: 	out	std_logic --trigger
 		);
@@ -53,12 +53,12 @@ end phased_trigger;
 
 architecture rtl of phased_trigger is
 --Power 
-type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
+type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
 signal trig_beam_thresh : power_array; --trigger thresholds for all beams
 signal servo_beam_thresh : power_array; --servo thresholds for all beams
 signal power_sum : power_array; --power levels for all beams
 
-type square_waveform is array (phased_sum_length-1 downto 0,num_beams-1 downto 0) of unsigned(phased_sum_power_bits downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
+type square_waveform is array (phased_sum_length-1 downto 0,num_beams-1 downto 0) of unsigned(phased_sum_power_bits-1 downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
 signal phased_power : square_waveform;
 
 type streaming_data_array is array(7 downto 0) of std_logic_vector((streaming_buffer_length*8-1) downto 0);
@@ -80,7 +80,7 @@ signal phased_trigger_reg : std_logic_vector(1 downto 0);
 signal phased_servo : std_logic;
 signal phased_servo_reg : std_logic_vector(1 downto 0);
 
---type trigger_counter is array (num_beams-1 downto 0) of std_logic_vector(15 downto 0);
+type trigger_counter is array (num_beams-1 downto 0) of std_logic_vector(15 downto 0);
 
 signal trig_clear				: std_logic_vector(num_beams-1 downto 0);
 signal servo_clear			: std_logic_vector(num_beams-1 downto 0);
@@ -91,7 +91,7 @@ signal servo_counter			: trigger_counter:= (others=>(others=>'0'));
 
 signal last_trig_bits_latched : std_logic_vector(num_beams-1 downto 0);
 
-signal trig_array_for_scalers : std_logic_vector(num_beams*2 downto 0); --//on clk_data_i
+signal trig_array_for_scalers : std_logic_vector(2*(num_beams+1) downto 0); --//on clk_data_i
 
 signal internal_phased_trig_en : std_logic := '0'; --enable this trigger block from sw
 signal internal_trigger_channel_mask : std_logic_vector(7 downto 0);
@@ -122,14 +122,14 @@ begin
 proc_pipeline_data : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
-		streaming_data(0)(streaming_buffer_length*8 downto 0) <= streaming_data(0)((streaming_buffer_length-1)*8 downto 0) & ch0_data_i(15 downto 0); --there is only good data in the lower two bytes
-		streaming_data(1)(streaming_buffer_length*8 downto 0) <= streaming_data(1)((streaming_buffer_length-1)*8 downto 0) & ch1_data_i(15 downto 0);
-		streaming_data(2)(streaming_buffer_length*8 downto 0) <= streaming_data(2)((streaming_buffer_length-1)*8 downto 0) & ch2_data_i(15 downto 0);
-		streaming_data(3)(streaming_buffer_length*8 downto 0) <= streaming_data(3)((streaming_buffer_length-1)*8 downto 0) & ch3_data_i(15 downto 0);
-		streaming_data(4)(streaming_buffer_length*8 downto 0) <= streaming_data(4)((streaming_buffer_length-1)*8 downto 0) & ch4_data_i(15 downto 0); 
-		streaming_data(5)(streaming_buffer_length*8 downto 0) <= streaming_data(5)((streaming_buffer_length-1)*8 downto 0) & ch5_data_i(15 downto 0);
-		streaming_data(6)(streaming_buffer_length*8 downto 0) <= streaming_data(6)((streaming_buffer_length-1)*8 downto 0) & ch6_data_i(15 downto 0);
-		streaming_data(7)(streaming_buffer_length*8 downto 0) <= streaming_data(7)((streaming_buffer_length-1)*8 downto 0) & ch7_data_i(15 downto 0);
+		streaming_data(0)(streaming_buffer_length*8-1 downto 0) <= streaming_data(0)((streaming_buffer_length-2)*8-1 downto 0) & ch0_data_i(15 downto 0); --there is only good data in the lower two bytes
+		streaming_data(1)(streaming_buffer_length*8-1 downto 0) <= streaming_data(1)((streaming_buffer_length-2)*8-1 downto 0) & ch1_data_i(15 downto 0);
+		streaming_data(2)(streaming_buffer_length*8-1 downto 0) <= streaming_data(2)((streaming_buffer_length-2)*8-1 downto 0) & ch2_data_i(15 downto 0);
+		streaming_data(3)(streaming_buffer_length*8-1 downto 0) <= streaming_data(3)((streaming_buffer_length-2)*8-1 downto 0) & ch3_data_i(15 downto 0);
+		streaming_data(4)(streaming_buffer_length*8-1 downto 0) <= streaming_data(4)((streaming_buffer_length-2)*8-1 downto 0) & ch4_data_i(15 downto 0); 
+		streaming_data(5)(streaming_buffer_length*8-1 downto 0) <= streaming_data(5)((streaming_buffer_length-2)*8-1 downto 0) & ch5_data_i(15 downto 0);
+		streaming_data(6)(streaming_buffer_length*8-1 downto 0) <= streaming_data(6)((streaming_buffer_length-2)*8-1 downto 0) & ch6_data_i(15 downto 0);
+		streaming_data(7)(streaming_buffer_length*8-1 downto 0) <= streaming_data(7)((streaming_buffer_length-2)*8-1 downto 0) & ch7_data_i(15 downto 0);
 		--second streaming array for pipelining
 		--streaming_data_2(0) <= streaming_data(0);
 		--streaming_data_2(1) <= streaming_data(1);
@@ -162,7 +162,7 @@ begin
 		for i in 0 to num_beams-1 loop --loop over beams
 			for j in 0 to phased_sum_length-1 loop
 				--phased_beam_waves(i*phased_sum_length+j) <= unsigned(streaming_data(0)(beam_delays(i*num_channels)+4 downto beam_delays(i*num_channels)-4)) 
-				phased_beam_waves(i,j) <= unsigned(streaming_data(0)(beam_delays(i,0) downto beam_delays(i,0))) 
+				phased_beam_waves(i,j) <= resize(unsigned(streaming_data(0)(beam_delays(i,0)+4 downto beam_delays(i,0)-4)),11) 
 					+unsigned(streaming_data(1)(beam_delays(i,1)+4 downto beam_delays(i,1)-4))
 					+unsigned(streaming_data(2)(beam_delays(i,2)+4 downto beam_delays(i,2)-4))
 					+unsigned(streaming_data(3)(beam_delays(i,3)+4 downto beam_delays(i,3)-4))
@@ -184,7 +184,7 @@ begin
 	elsif rising_edge(clk_data_i) then
 		for i in 0 to num_beams-1 loop
 			for j in 0 to phased_sum_length-1 loop
-				phased_power(i,j)<=phased_beam_waves(i,j)*phased_beam_waves(i,j);
+				phased_power(j,i)<=resize(phased_beam_waves(i,j)*phased_beam_waves(i,j),23);
 			end loop;
 		end loop;
 	
@@ -199,10 +199,11 @@ begin
 		power_sum<=(others=>(others=>'0'));
 	elsif rising_edge(clk_data_i) then
 		for i in 0 to num_beams-1 loop
-			power_sum(i)<=phased_power(i,0)+phased_power(i,1)
-				+phased_power(i,2)+phased_power(i,3)
-				+phased_power(i,4)+phased_power(i,5);
+			power_sum(i)<=resize(phased_power(0,i)+phased_power(1,i)
+				+phased_power(2,i)+phased_power(3,i)
+				+phased_power(4,i)+phased_power(5,i),24);
 		end loop;
+		
 	end if;
 
 end process;
@@ -301,7 +302,7 @@ end generate;
 ------------
 
 
-trig_array_for_scalars(2*num_beams+2 downto num_beams +2)<=servo_clear(num_beams-1 downto 0);
+trig_array_for_scalars(2*num_beams+1 downto num_beams +2)<=servo_clear(num_beams-1 downto 0);
 trig_array_for_scalars(num_beams+1)<=phased_servo;
 trig_array_for_scalars(num_beams downto 1)<=trig_clear(num_beams-1 downto 0);
 trig_array_for_scalars(0)<=phased_trigger;

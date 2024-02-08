@@ -39,7 +39,7 @@ port(
 		phase_trig_i:	in		std_logic;
 		ext_trig_i	:  in		std_logic;
 		pps_i			:	in		std_logic;
-		trig_bits_metadata_i : in std_logic_vector(7 downto 0);
+		trig_bits_metadata_i : in std_logic_vector(num_beams-1 downto 0);
 		dat_rdy_o	:	out	std_logic; --to gpio for BBB interrupt 
 		event_write_busy_o : out std_logic;
 		
@@ -290,7 +290,7 @@ begin
 			internal_metadata_array(3) <= internal_event_timestamp_counter(23 downto 0);
 			internal_metadata_array(4) <= internal_event_timestamp_counter(47 downto 24);
 			internal_metadata_array(5) <= x"0" & "000" & pps_i & x"00" & x"0" & internal_trigger_type;
-			internal_metadata_array(6) <= x"0000" & trig_bits_metadata_i;
+			internal_metadata_array(6)(num_beams-1 downto 0) <= trig_bits_metadata_i;
 		end if;
 	end if;
 end process;	

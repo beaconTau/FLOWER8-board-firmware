@@ -55,6 +55,7 @@ constant surface_channels : integer := 6;
 type surface_data_type is array (surface_channels-1 downto 0) of std_logic_vector(define_ram_width-1 downto 0);
 
 --//
+constant num_beams : integer :=10;
 type event_metadata_type is array(24 downto 0) of std_logic_vector(23 downto 0);
 
 type rx_data_delay_type is array (7 downto 0) of std_logic_vector(3 downto 0); --//delay range for rx data to align ADCs
@@ -72,16 +73,16 @@ constant define_wave2beam_hi_bit : integer := define_wave2beam_lo_bit + define_w
 constant define_beam_bits			: integer := define_wave2beam_bits+3; --//effective resolution increased by 3 bits (8 antennas)
 constant define_sign_bit			: integer := define_beam_bits;
 
-constant num_power_bits : integer :=12;
+constant num_power_bits : integer :=24;
 
 constant streaming_buffer_length : integer :=92;
 constant phased_sum_length : integer :=8;
 constant num_channels : integer :=6;
-constant num_beams : integer :=20;
+
 
 constant phased_sum_bits : integer :=11;
-constant phased_sum_power_bits : integer :=22;
-constant power_sum_bits:integer :=25;
+constant phased_sum_power_bits : integer :=23;
+constant power_sum_bits:integer :=24; --actually 25 but this fits into the io regs
 
 type antenna_delays is array (num_beams-1 downto 0,num_channels-1 downto 0) of integer;
 constant beam_delays : antenna_delays := (others=>(others=>46));

@@ -159,12 +159,13 @@ architecture rtl of flower_top is
 	signal ch5_data : std_logic_vector(31 downto 0);
 	signal ch6_data : std_logic_vector(31 downto 0);
 	signal ch7_data : std_logic_vector(31 downto 0);
-	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
-	signal phased_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
+	--signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
+	signal phased_trig_scaler_bits : std_logic_vector(2*(num_beams+1) downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
-	signal coinc_trig_internal : std_logic;
-	signal phased_trig_internal : std_logic;
-	signal trig_bits_metadata : std_logic_vector(7 downto 0);
+	--signal coinc_trig_internal : std_logic;
+	signal phased_trig_internal : std_logic ;
+	signal coinc_trig_internal : std_logic :='0';
+	signal trig_bits_metadata : std_logic_vector(num_beams-1 downto 0);
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
 	signal event_metadata : event_metadata_type;
@@ -180,7 +181,7 @@ architecture rtl of flower_top is
 	signal internal_pps_fast_sync_flag : std_logic;
 	signal internal_sma_trigger_input_assign : std_logic;
 	signal internal_sma_sync_input_assign : std_logic;
-	signal internal_coinc_trig_to_out_sma_en : std_logic := '0';
+	signal internal_phased_trig_to_out_sma_en : std_logic := '0';
 	signal internal_event_write_busy : std_logic := '0'; --flag if busy writing event to ram, or buffer still full
 
 	---------------------------------------
@@ -430,7 +431,7 @@ begin
 			sma_aux0_io <= internal_sync_out;
 		when '0' => 
 			--add logic with the event_write_busy, so that secondary board doesn't keep getting triggers while the event is being written
-			sma_aux0_io <= coinc_trig_internal and internal_coinc_trig_to_out_sma_en and (not internal_event_write_busy);
+			sma_aux0_io <= phased_trig_internal and internal_phased_trig_to_out_sma_en and (not internal_event_write_busy);
 	end case;
 	end process;
 	
@@ -451,7 +452,7 @@ begin
 	port map(
 	clkA	=> clock_internal_25MHz_loc, clkB => clock_internal_core,
 	SignalIn_clkA	=> registers(96)(0), 
-	SignalOut_clkB	=> internal_coinc_trig_to_out_sma_en);
+	SignalOut_clkB	=> internal_phased_trig_to_out_sma_en);
 	-----------------------------------------
 	-----------------------------------------
 	--xCOINC_TRIG : entity work.simple_trigger
@@ -510,7 +511,7 @@ begin
 		clk_i					=> clock_internal_25MHz_loc, --clock_internal_10MHz_loc,
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
-		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
+		phased_trig_bits_i 	=> phased_trig_scaler_bits,
 		pps_cycle_counter_i	=> internal_pps_cycle_counter,
 		scaler_to_read_o  => scaler_to_read_int);
 	--///////////////////////////////////////	
