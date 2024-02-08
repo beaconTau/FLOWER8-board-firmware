@@ -35,7 +35,7 @@ end scalers_top;
 
 architecture rtl of scalers_top is
 
-constant num_scalers : integer := 64;
+constant num_scalers : integer := 6*(num_beams+1)+1;
 type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
 
 signal internal_scaler_array : scaler_array_type := (others=>(others=>'0'));
@@ -82,12 +82,12 @@ end process;
 proc_scaler_pps : process(clk_i, refresh_clk_1Hz)
 begin
 	if rising_edge(clk_i) and refresh_clk_1Hz = '1' then
-		internal_scaler_array(63) <= internal_scaler_array(63) + 1;
+		internal_scaler_array(6*(num_beams+1)) <= internal_scaler_array(6*(num_beams+1)) + 1;
 	end if;
 end process;
 --//scalers 0-11
-CoincTrigScalers1Hz : for i in 0 to 2*(num_beams+1) generate
-	xCOINC1Hz : scaler
+PhasedTrigScalers1Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASED1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
@@ -96,24 +96,24 @@ CoincTrigScalers1Hz : for i in 0 to 2*(num_beams+1) generate
 		scaler_o => internal_scaler_array(i));
 end generate;
 --//scalers 12-23
-CoincTrigScalers1HzGated : for i in 0 to 2*(num_beams+1) generate
-	xCOINC1Hz : scaler
+PhasedTrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASED1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
 		count_i => phased_trig_bits_i(i) and gate_i,
-		scaler_o => internal_scaler_array(i+20));
+		scaler_o => internal_scaler_array(i+2*(num_beams+1)));
 end generate;
 --//scalers 24-35
-CoincTrigScalers100Hz : for i in 0 to 2*(num_beams+1) generate
-	xCOINC100Hz : scaler
+PhasedTrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASED100Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => internal_100Hz_or_100mHz_refresh,
 		count_i => phased_trig_bits_i(i),
-		scaler_o => internal_scaler_array(i+40));
+		scaler_o => internal_scaler_array(i+4*(num_beams+1)));
 end generate;
 -------------------------------------		
 proc_save_scalers : process(rst_i, clk_i, reg_i)
