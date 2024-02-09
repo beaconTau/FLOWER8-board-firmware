@@ -141,8 +141,8 @@ end process;
 proc_pipeline_data : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
-		
-		streaming_data(0)(streaming_buffer_length*8-1 downto 0) <= streaming_data(0)((streaming_buffer_length-2)*8-1 downto 0) & ch0_data_i(15 downto 0); --there is only good data in the lower two bytes
+		--streaming_buffer_length is an excessive value for trying to get a trigger out and recording data.
+		streaming_data(0)(streaming_buffer_length*8-1 downto 0) <= streaming_data(0)((streaming_buffer_length-2)*8-1 downto 0) & ch0_data_i(15 downto 0);
 		streaming_data(1)(streaming_buffer_length*8-1 downto 0) <= streaming_data(1)((streaming_buffer_length-2)*8-1 downto 0) & ch1_data_i(15 downto 0);
 		streaming_data(2)(streaming_buffer_length*8-1 downto 0) <= streaming_data(2)((streaming_buffer_length-2)*8-1 downto 0) & ch2_data_i(15 downto 0);
 		streaming_data(3)(streaming_buffer_length*8-1 downto 0) <= streaming_data(3)((streaming_buffer_length-2)*8-1 downto 0) & ch3_data_i(15 downto 0);
