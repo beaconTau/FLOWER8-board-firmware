@@ -162,24 +162,25 @@ begin
 		registers_io(48) <= x"0000FF";   --// channel masking [48]
 		registers_io(80) <= x"FFFFFF";   --// beam masks for trigger [80]
 		registers_io(81) <= x"0001FF";   --// trig holdoff - lower 16 bits [81]
-		registers_io(82) <= x"000300";	--// phased trigger/beam enables [82]
+		registers_io(82) <= x"000000";	--// beam enables+phased trigger (num_beams->1 enables, LSb=trigger enable) [82]
 		registers_io(75) <= x"00FF00";   --// external trigger input configuration [75]
 		registers_io(83) <= x"000C03";   --// external trigger output configuration [83]
-		registers_io(84) <= x"000000";   --// enable phased trigger to data manager (LSB=1 to enable)
-		registers_io(85) <= x"000001";   --// trigger verification mode (LSB=1 to enable)
+
 		
 		registers_io(108) <= x"000000"; --//write LSB to update internal temp sensor; LSB+1 to enable[108]
 
 		--//trigger thresholds:
 		--registers_io(base_adrs_trig_thresh+0) <= x"0FFFFF";   --//[86]
-		registers_io(86) <= x"000000";   --//[87] coinc trig ch0
-		registers_io(87) <= x"000000";   --//[88] coinc trig ch1
-		registers_io(88) <= x"000000";   --//[89] coinc trig ch2
-		registers_io(89) <= x"000000";   --//[90] coinc trig ch3
-		registers_io(90) <= x"000000";   --//[90] coinc trig ch4
-		registers_io(91) <= x"000000";   --//[90] coinc trig ch5
-		registers_io(92) <= x"000000";   --//[90] coinc trig ch6
-		registers_io(93) <= x"000000";   --//[90] coinc trig ch7
+		registers_io(84) <= x"FFFFFF";   --// beam 0 thresholds (MSBits servo thrsholds, LSB trigger thesholds)
+		registers_io(85) <= x"FFFFFF";   --// beam 1 thresholds
+		registers_io(86) <= x"FFFFFF";   --// beam 2 thresholds
+		registers_io(87) <= x"FFFFFF";   --// beam 3 thresholds
+		registers_io(88) <= x"FFFFFF";   --// beam 4 thresholds
+		registers_io(89) <= x"FFFFFF";   --// beam 5 thresholds
+		registers_io(90) <= x"FFFFFF";   --// beam 6 thresholds
+		registers_io(91) <= x"FFFFFF";   --// beam 7 thresholds 
+		registers_io(92) <= x"FFFFFF";   --// beam 8 thresholds
+		registers_io(93) <= x"FFFFFF";   --// beam 9 thresholds
 
 		registers_io(94) <= x"000001";   --//[94] pps trig delay
 		registers_io(95) <= x"000200";   --//[95] coinc trig settings

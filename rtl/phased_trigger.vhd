@@ -26,7 +26,8 @@ generic(
 		--//base register for per-channel coincidence thresholds
 		phased_trig_reg_base	: std_logic_vector(7 downto 0):= x"50"; --moved in FLOWER8
 		phased_trig_param_reg	: std_logic_vector(7 downto 0):= x"55"; --moved in FLOWER8
-		address_reg_pps_delay: std_logic_vector(7 downto 0) := x"5E" 
+		address_reg_pps_delay: std_logic_vector(7 downto 0) := x"5E" ;
+		beam_mask_reg : std_logic_vector(7 downto 0) := x"62"
 		);
 
 port(
@@ -53,6 +54,11 @@ end phased_trigger;
 
 architecture rtl of phased_trigger is
 --Power 
+
+type thresh_input is array (num_beams-1 downto 0) of unsigned(input_power_thesh_bits-1 downto 0);
+signal input_trig_thresh : thresh_input;
+signal input_servo_thresh : thresh_input;
+
 type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
 signal trig_beam_thresh : power_array; --trigger thresholds for all beams
 signal servo_beam_thresh : power_array; --servo thresholds for all beams
@@ -119,6 +125,19 @@ end component;
 
 begin
 ------------------------------------------------
+
+proc_convert_thresholds : process(clk_data_i)
+begin
+	if rising_edge(clk_data_i) then
+		for i in 0 to 11 loop
+			for j in 0 to num_beams-1 loop
+				trig_beam_thresh(j)(2*i)<=input_trig_thresh(j)(i);
+				servo_beam_thresh(j)(2*i)<=input_servo_thresh(j)(i);
+			end loop;
+		end loop;
+	end if;
+end process;
+	
 proc_pipeline_data : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
@@ -163,12 +182,12 @@ begin
 		for i in 0 to num_beams-1 loop --loop over beams
 			for j in 0 to phased_sum_length-1 loop
 				--phased_beam_waves(i*phased_sum_length+j) <= unsigned(streaming_data(0)(beam_delays(i*num_channels)+4 downto beam_delays(i*num_channels)-4)) 
-				phased_beam_waves(i,j) <= resize(unsigned(streaming_data(0)(beam_delays(i,0)+4 downto beam_delays(i,0)-4)),phased_sum_bits) 
-					+unsigned(streaming_data(1)(beam_delays(i,1)+4 downto beam_delays(i,1)-4))
-					+unsigned(streaming_data(2)(beam_delays(i,2)+4 downto beam_delays(i,2)-4))
-					+unsigned(streaming_data(3)(beam_delays(i,3)+4 downto beam_delays(i,3)-4))
-					+unsigned(streaming_data(4)(beam_delays(i,4)+4 downto beam_delays(i,4)-4))
-					+unsigned(streaming_data(5)(beam_delays(i,5)+4 downto beam_delays(i,5)-4));
+				phased_beam_waves(i,j) <= resize(unsigned(streaming_data(0)(beam_delays(i,0)+4 downto beam_delays(i,0)-3)),phased_sum_bits) 
+					+unsigned(streaming_data(1)(beam_delays(i,1)+4 downto beam_delays(i,1)-3))
+					+unsigned(streaming_data(2)(beam_delays(i,2)+4 downto beam_delays(i,2)-3))
+					+unsigned(streaming_data(3)(beam_delays(i,3)+4 downto beam_delays(i,3)-3))
+					+unsigned(streaming_data(4)(beam_delays(i,4)+4 downto beam_delays(i,4)-3))
+					+unsigned(streaming_data(5)(beam_delays(i,5)+4 downto beam_delays(i,5)-3));
 			end loop;
 		end loop;
 
@@ -267,37 +286,36 @@ end process;
 	
 ------------------------------------------------
 
-		
 --//sync some software commands to the data clock
-
-INDIV_TRIG_BITS : for i in 0 to num_beams-1 generate
-	xTRIGTHRESHSYNC : signal_sync
-	port map(
-	clkA				=> clk_i,
-	clkB				=> clk_data_i,
-	SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base))+i)(0), --threshold from software
-	SignalOut_clkB	=> trig_beam_thresh(i)(0));
+TRIG_THRESHOLDS : for j in 0 to num_beams-1 generate
+	INDIV_TRIG_BITS : for i in 0 to input_power_thesh_bits-1 generate
+		xTRIGTHRESHSYNC : signal_sync
+		port map(
+		clkA				=> clk_i,
+		clkB				=> clk_data_i,
+		SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_param_reg))+j)(i), --threshold from software
+		SignalOut_clkB	=> input_trig_thresh(j)(i));
+	end generate;
 end generate;
 
---------------
-
-INDIV_SERVO_BITS : for i in 0 to num_beams-1 generate
-	xSERVOTHRESHSYNC : signal_sync
-	port map(
-	clkA				=> clk_i,
-	clkB				=> clk_data_i,
-	SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base))+i)(i+8), --threshold from software
-	SignalOut_clkB	=> servo_beam_thresh(i)(0));
+SERVO_THRESHOLDS : for j in 0 to num_beams-1 generate
+	INDIV_SERVO_BITS : for i in 0 to input_power_thesh_bits-1 generate
+		xSERVOTHRESHSYNC : signal_sync
+		port map(
+		clkA				=> clk_i,
+		clkB				=> clk_data_i,
+		SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_param_reg))+j)(i+12), --threshold from software
+		SignalOut_clkB	=> input_servo_thresh(j)(i));
+	end generate;
 end generate;
 
---------------
 
 ------------
-TRIGBEAMMASK : for i in 0 to num_beams-1 generate
+TRIGBEAMMASK : for i in 0 to num_beams-1 generate --beam masks. 1 == on
 	xTRIGBEAMMASKSYNC : signal_sync
 		port map(
 		clkA	=> clk_i,   clkB	=> clk_data_i,
-		SignalIn_clkA	=> registers_i(to_integer(unsigned(internal_trigger_beam_mask)))(i), --trig channel mask
+		SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base)))(i), --trig channel mask
 		SignalOut_clkB	=> internal_trigger_beam_mask(i));
 end generate;
 ------------
@@ -310,10 +328,10 @@ trig_array_for_scalars(0)<=phased_trigger;
 	
 
 ----TRIGGER OUT!!
-phased_trig_o <= phased_trigger_reg(0); --coincidence_trigger; 
+phased_trig_o <= phased_trigger; --phased trigger for 0->1 transition. phased_trigger_reg(0) for absolute trigger 
 --------------
 
-TrigToScalers	:	 for i in 0 to 2*num_beams+2 generate
+TrigToScalers	:	 for i in 0 to 2*num_beams+2 generate 
 	xTRIGSYNC : flag_sync
 	port map(
 		clkA 			=> clk_data_i,
@@ -323,7 +341,7 @@ TrigToScalers	:	 for i in 0 to 2*num_beams+2 generate
 		out_clkB		=> trig_bits_o(i));
 end generate TrigToScalers;
 --------------
-xTRIGENABLESYNC : signal_sync
+xTRIGENABLESYNC : signal_sync --phased trig enable bit
 	port map(
 	clkA				=> clk_i,
 	clkB				=> clk_data_i,

@@ -130,6 +130,13 @@ begin
 		latched_pps_cycle_counter <= pps_cycle_counter_i; -- latch the pps counter in same fashion as other scalers
 		
 	elsif rising_edge(clk_i) then
+	
+		if unsigned(reg_i(41)(7 downto 0))<6*(num_beams+1) then
+			scaler_to_read_o<=latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0)))+1)&latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0))));
+		else
+			scaler_to_read_o<=latched_scaler_array(1)&latched_scaler_array(0);
+		end if;
+		/*
 		case reg_i(41)(7 downto 0) is
 			when x"00" =>
 				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
@@ -204,7 +211,9 @@ begin
 			
 			when others =>
 				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
+			
 		end case;
+		*/
 	end if;
 end process;
 

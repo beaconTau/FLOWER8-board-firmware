@@ -72,15 +72,16 @@ type register_array_type is array (127 downto 0)
 --constant define_wave2beam_hi_bit : integer := define_wave2beam_lo_bit + define_wave2beam_bits; --// high bit from sliced adc data
 --constant define_beam_bits			: integer := define_wave2beam_bits+3; --//effective resolution increased by 3 bits (8 antennas)
 --constant define_sign_bit			: integer := define_beam_bits;
-constant num_beams : integer :=10;
-constant num_power_bits : integer :=24;
-constant phased_sum_bits : integer :=11;
-constant phased_sum_power_bits : integer :=23;
-constant power_sum_bits:integer :=24; --actually 25 but this fits into the io regs
+constant num_beams 					:	integer :=10;
+constant num_power_bits 			:	integer :=24;
+constant phased_sum_bits 			:	integer :=11;
+constant phased_sum_power_bits 	:	integer :=22;
+constant power_sum_bits				:	integer :=24; --actually 25 but this fits into the io regs
+constant input_power_thesh_bits	:	integer :=12;
 
-constant streaming_buffer_length : integer :=92;
-constant phased_sum_length : integer :=8;
-constant num_channels : integer :=6;
+constant streaming_buffer_length	:	integer :=92;
+constant phased_sum_length			:	integer :=8;
+constant num_channels				:	integer :=6;
 
 
 
