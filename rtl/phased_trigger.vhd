@@ -25,8 +25,8 @@ generic(
 		--//trigger setting register: coinc trig enable is bit [8]
 		trigger_enable_reg_adr : std_logic_vector(7 downto 0) := x"3D";
 		--//base register for per-channel coincidence thresholds
-		phased_trig_reg_base	: std_logic_vector(7 downto 0):= x"50"; --moved in FLOWER8
-		phased_trig_param_reg	: std_logic_vector(7 downto 0):= x"55"; --moved in FLOWER8
+		phased_trig_reg_base	: std_logic_vector(7 downto 0):= x"50";
+		phased_trig_param_reg	: std_logic_vector(7 downto 0):= x"81";
 		address_reg_pps_delay: std_logic_vector(7 downto 0) := x"5E" ;
 		beam_mask_reg : std_logic_vector(7 downto 0) := x"62"
 		);
@@ -61,8 +61,8 @@ signal input_trig_thresh : thresh_input;
 signal input_servo_thresh : thresh_input;
 
 type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
-signal trig_beam_thresh : power_array; --trigger thresholds for all beams
-signal servo_beam_thresh : power_array; --servo thresholds for all beams
+signal trig_beam_thresh : power_array:=(others=>(others=>'0')) ; --trigger thresholds for all beams
+signal servo_beam_thresh : power_array:=(others=>(others=>'0')) ;--(others=>(others=>'0')) --servo thresholds for all beams
 signal power_sum : power_array; --power levels for all beams
 signal avg_power: power_array;
 
@@ -111,7 +111,7 @@ signal internal_phased_trig_en : std_logic := '0'; --enable this trigger block f
 signal internal_trigger_channel_mask : std_logic_vector(7 downto 0);
 signal internal_trigger_beam_mask : std_logic_vector(num_beams-1 downto 0);
 signal bits_for_trigger : std_logic_vector(num_beams-1 downto 0);
-signal trig_array_for_scalars : std_logic_vector (23 downto 0);
+signal trig_array_for_scalars : std_logic_vector (2*(num_beams+1)-1 downto 0);
 
 constant num_div: integer := integer(log2(real(phased_sum_length)));
 constant pad_zeros: std_logic_vector(num_div-1 downto 0):=(others=>'0');
@@ -146,12 +146,11 @@ begin
 proc_convert_thresholds : process(clk_data_i)
 begin
 	if rising_edge(clk_data_i) then
-		for i in 0 to 11 loop
-			for j in 0 to num_beams-1 loop
-				trig_beam_thresh(j)(2*i)<=input_trig_thresh(j)(i);
-				servo_beam_thresh(j)(2*i)<=input_servo_thresh(j)(i);
-			end loop;
+		for i in 0 to num_beams-1 loop
+			trig_beam_thresh(i)(power_high_bit downto power_low_bit)<=input_trig_thresh(i);
+			servo_beam_thresh(i)(power_high_bit downto power_low_bit)<=input_servo_thresh(i);
 		end loop;
+			
 	end if;
 end process;
 	
@@ -271,7 +270,7 @@ begin
 
 		
 	elsif rising_edge(clk_data_i) then
-		--loop over the beams
+		--loop over the beams and this is a big mess
 		for i in 0 to num_beams-1 loop
 
 			if trig_counter(i) = coinc_window_int then
@@ -407,7 +406,7 @@ trig_array_for_scalars(0)<=phased_trigger;
 phased_trig_o <= phased_trigger_reg(0); --phased trigger for 0->1 transition. phased_trigger_reg(0) for absolute trigger 
 --------------
 
-TrigToScalers	:	 for i in 0 to 2*num_beams+2 generate 
+TrigToScalers	:	 for i in 0 to 2*(num_beams+1)-1 generate 
 	xTRIGSYNC : flag_sync
 	port map(
 		clkA 			=> clk_data_i,
@@ -421,6 +420,6 @@ xTRIGENABLESYNC : signal_sync --phased trig enable bit
 	port map(
 	clkA				=> clk_i,
 	clkB				=> clk_data_i,
-	SignalIn_clkA	=> registers_i(to_integer(unsigned(trigger_enable_reg_adr)))(8), --overall coinc trig enable bit
+	SignalIn_clkA	=> registers_i(to_integer(unsigned(trigger_enable_reg_adr)))(9), --overall coinc trig enable bit
 	SignalOut_clkB	=> internal_phased_trig_en);
 end rtl;
