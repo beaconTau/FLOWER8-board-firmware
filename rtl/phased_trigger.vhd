@@ -15,6 +15,7 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+use ieee.math_real.log2;
 
 use work.defs.all;
 
@@ -63,25 +64,32 @@ type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 do
 signal trig_beam_thresh : power_array; --trigger thresholds for all beams
 signal servo_beam_thresh : power_array; --servo thresholds for all beams
 signal power_sum : power_array; --power levels for all beams
+signal avg_power: power_array;
 
 type square_waveform is array (phased_sum_length-1 downto 0,num_beams-1 downto 0) of unsigned(phased_sum_power_bits-1 downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
 signal phased_power : square_waveform;
 
 type streaming_data_array is array(7 downto 0) of std_logic_vector((streaming_buffer_length*8-1) downto 0);
-
 signal streaming_data : streaming_data_array := (others=>(others=>'0')); --pipeline data
 
 type phased_arr is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of unsigned(phased_sum_bits-1 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
 signal phased_beam_waves: phased_arr;
 
 
-type beam_triggering is array (num_beams-1 downto 0) of std_logic;
-signal triggering_beam: beam_triggering := (others=>'0');
-signal servoing_beam: beam_triggering := (others=>'0');
+--type beam_triggering is array (num_beams-1 downto 0) of std_logic;
+--signal triggering_beam: beam_triggering := (others=>'0');
+--signal servoing_beam: beam_triggering := (others=>'0');
+
+signal triggering_beam: std_logic_vector(num_beams-1 downto 0):=(others=>'0');
+signal servoing_beam: std_logic_vector(num_beams-1 downto 0):=(others=>'0');
 
 
 signal phased_trigger : std_logic;
 signal phased_trigger_reg : std_logic_vector(1 downto 0);
+
+type trigger_regs is array(num_beams-1 downto 0) of std_logic_vector(1 downto 0);
+signal beam_trigger_reg : trigger_regs;
+signal beam_servo_reg : trigger_regs;
 
 signal phased_servo : std_logic;
 signal phased_servo_reg : std_logic_vector(1 downto 0);
@@ -104,6 +112,15 @@ signal internal_trigger_channel_mask : std_logic_vector(7 downto 0);
 signal internal_trigger_beam_mask : std_logic_vector(num_beams-1 downto 0);
 signal bits_for_trigger : std_logic_vector(num_beams-1 downto 0);
 signal trig_array_for_scalars : std_logic_vector (23 downto 0);
+
+constant num_div: integer := integer(log2(real(phased_sum_length)));
+constant pad_zeros: std_logic_vector(num_div-1 downto 0):=(others=>'0');
+
+signal coinc_window_int	: std_logic_vector(7 downto 0) := x"02"; --//num of clk_data_i periods
+constant baseline			: std_logic_vector(7 downto 0) := x"80";
+
+signal is_there_a_trigger: std_logic_vector(num_beams-1 downto 0);
+signal is_there_a_servo: std_logic_vector(num_beams-1 downto 0);
 
 --------------
 component signal_sync is
@@ -151,7 +168,7 @@ begin
 		streaming_data(6)(streaming_buffer_length*8-1 downto 0) <= streaming_data(6)((streaming_buffer_length-2)*8-1 downto 0) & ch5_data_i(15 downto 0);
 		streaming_data(7)(streaming_buffer_length*8-1 downto 0) <= streaming_data(7)((streaming_buffer_length-2)*8-1 downto 0) & ch6_data_i(15 downto 0);
 		--second streaming array for pipelining
-		--streaming_data_2(0) <= streaming_data(0);
+		--streaming_data_2(0) <= streaming_data(0); maybe I pipeline by first subtracting the dc offset? then powers wont be so big in the end. convert to signed then 
 		--streaming_data_2(1) <= streaming_data(1);
 		--streaming_data_2(2) <= streaming_data(2);
 		--streaming_data_2(3) <= streaming_data(3);
@@ -222,11 +239,15 @@ begin
 			power_sum(i)<=resize(phased_power(0,i)+phased_power(1,i)
 				+phased_power(2,i)+phased_power(3,i)
 				+phased_power(4,i)+phased_power(5,i),power_sum_bits);
+				
+			avg_power(i)(power_sum_bits-1 downto power_sum_bits-num_div)<=unsigned(pad_zeros);
+			avg_power(i)(power_sum_bits-1-num_div downto 0)<=power_sum(i)(power_sum_bits-1 downto num_div); --divide by window size
 		end loop;
-		
 	end if;
-
 end process;
+
+
+
 ------------------------------------------------
 				
 		
@@ -242,31 +263,86 @@ begin
 		last_trig_bits_latched_o <= (others=>'0');
 		triggering_beam<= (others=>'0');
 		servoing_beam<= (others=>'0');
+		
+		trig_clear <= (others=>'0');
+		trig_counter <= (others=>(others=>'0'));
+		servo_clear <= (others=>'0');
+		servo_counter <= (others=>(others=>'0'));
 
 		
 	elsif rising_edge(clk_data_i) then
 		--loop over the beams
 		for i in 0 to num_beams-1 loop
+
+			if trig_counter(i) = coinc_window_int then
+				trig_clear(i) <= '1';
+			else
+				trig_clear(i) <= '0';
+			end if;
 				
+			if beam_trigger_reg(i)(0) = '1'  then
+				trig_counter(i) <= trig_counter(i) + 1;
+			else
+				trig_counter(i) <= (others=>'0');
+			end if;
+			------------------------------------
+			--for servoing only (basically a separate thresholding)
+			if servo_counter(i) = coinc_window_int then
+				servo_clear(i) <= '1';
+			else
+				servo_clear(i) <= '0';
+			end if;
+				
+			if beam_servo_reg(i)(0) = '1' then
+				servo_counter(i) <= servo_counter(i) + 1;
+			else
+				servo_counter(i) <= (others=>'0');
+			end if;
+			------------------------------------
+
+		
 			if power_sum(i)>trig_beam_thresh(i) then
 				triggering_beam(i)<='1';
+				beam_trigger_reg(i)(0)<='1';
+			else
+				triggering_beam(i)<='0';
+				beam_trigger_reg(i)(0)<='0';
 			end if;
 			if power_sum(i)>servo_beam_thresh(i) then
 				servoing_beam(i)<='1';
+				beam_servo_reg(i)(0)<='1';
+			else
+				servoing_beam(i)<='0';
+				beam_servo_reg(i)(0)<='0';
 			end if;
 			last_trig_bits_latched_o(i)<=triggering_beam(i);
 		
-			if triggering_beam(i) = internal_trigger_beam_mask(i) then
-				phased_trigger_reg(0)<='1';
-			else 
-				phased_trigger_reg(0)<='0';
-			end if;
-			if servoing_beam(i) = internal_trigger_beam_mask(i) then
-				phased_servo_reg(0)<='1';
-			else 
-				phased_servo_reg(0)<='0';
-			end if;
+			--if triggering_beam(i) = internal_trigger_beam_mask(i) then
+			--	phased_trigger_reg(0)<='1';
+			--else 
+			--	phased_trigger_reg(0)<='0';
+			--end if;
+			--f servoing_beam(i) = internal_trigger_beam_mask(i) then
+			--	phased_servo_reg(0)<='1';
+			--else 
+			--	phased_servo_reg(0)<='0';
+			--end if;
 		end loop;
+		
+		is_there_a_trigger<= triggering_beam AND internal_trigger_beam_mask;
+		is_there_a_servo<= servoing_beam AND internal_trigger_beam_mask;
+		
+		if to_integer(unsigned(is_there_a_trigger))>0 then
+			phased_trigger_reg(0)<='1';
+		else
+			phased_trigger_reg(0)<='0';
+		end if;
+		if to_integer(unsigned(is_there_a_servo))>0 then
+			phased_servo_reg(0)<='1';
+		else
+			phased_servo_reg(0)<='0';
+		end if;
+		
 		phased_trigger_reg(1)<=phased_trigger_reg(0);
 		phased_servo_reg(1)<=phased_servo_reg(0);
 		
@@ -328,7 +404,7 @@ trig_array_for_scalars(0)<=phased_trigger;
 	
 
 ----TRIGGER OUT!!
-phased_trig_o <= phased_trigger; --phased trigger for 0->1 transition. phased_trigger_reg(0) for absolute trigger 
+phased_trig_o <= phased_trigger_reg(0); --phased trigger for 0->1 transition. phased_trigger_reg(0) for absolute trigger 
 --------------
 
 TrigToScalers	:	 for i in 0 to 2*num_beams+2 generate 

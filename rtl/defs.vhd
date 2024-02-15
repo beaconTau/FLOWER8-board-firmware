@@ -62,7 +62,7 @@ type rx_data_delay_type is array (7 downto 0) of std_logic_vector(3 downto 0); -
 type buffered_data_type is array (7 downto 0) of std_logic_vector(2*define_ram_width-1 downto 0);
 
 --//registers
-type register_array_type is array (127 downto 0) 
+type register_array_type is array (2**define_address_size-1 downto 0) 
 	of std_logic_vector(define_register_size-define_address_size-1 downto 0); --//8 bit address, 24 bit data
 
 --//////////////////////////////
@@ -82,6 +82,10 @@ constant input_power_thesh_bits	:	integer :=12;
 constant streaming_buffer_length	:	integer :=92;
 constant phased_sum_length			:	integer :=8;
 constant num_channels				:	integer :=6;
+
+constant power_length: integer:=8;
+constant power_low_bit: integer:=12;
+constant power_high_bit: integer:=power_low_bit+power_length;
 
 
 
