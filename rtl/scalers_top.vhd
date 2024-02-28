@@ -131,7 +131,7 @@ begin
 		
 	elsif rising_edge(clk_i) then
 	
-		if unsigned(reg_i(41)(7 downto 0))<6*(num_beams+1) then
+		if unsigned(reg_i(41)(7 downto 0))<6*(num_beams+1) then --42 beam limit from this before the address exceeds 8 bits
 			scaler_to_read_o<=latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0)))+1)&latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0))));
 		else
 			scaler_to_read_o<=latched_scaler_array(1)&latched_scaler_array(0);

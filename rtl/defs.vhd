@@ -72,7 +72,7 @@ type register_array_type is array (2**define_address_size-1 downto 0)
 --constant define_wave2beam_hi_bit : integer := define_wave2beam_lo_bit + define_wave2beam_bits; --// high bit from sliced adc data
 --constant define_beam_bits			: integer := define_wave2beam_bits+3; --//effective resolution increased by 3 bits (8 antennas)
 --constant define_sign_bit			: integer := define_beam_bits;
-constant num_beams 					:	integer :=20;
+constant num_beams 					:	integer :=42;
 constant num_power_bits 			:	integer :=24;
 constant phased_sum_bits 			:	integer :=11;
 constant phased_sum_power_bits 	:	integer :=22;
@@ -84,7 +84,7 @@ constant phased_sum_length			:	integer :=8;
 constant num_channels				:	integer :=6;
 
 constant power_length: integer:=12;
-constant power_low_bit: integer:=12;
+constant power_low_bit: integer:=6;
 constant power_high_bit: integer:=power_low_bit+power_length-1;
 
 
