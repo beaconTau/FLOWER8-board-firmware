@@ -46,7 +46,7 @@ port(
 		ch6_data_i	:	in		std_logic_vector(31 downto 0);
 		ch7_data_i	:	in		std_logic_vector(31 downto 0);
 		
-		last_trig_bits_latched_o : out std_logic_vector(7 downto 0); --for metadata
+		last_trig_bits_latched_o : out std_logic_vector(7 downto 0); --for metadata - num beams>>>num_channels
 		trig_bits_o : 	out	std_logic_vector(23 downto 0); --for scalers
 		coinc_trig_o: 	out	std_logic --trigger
 		);

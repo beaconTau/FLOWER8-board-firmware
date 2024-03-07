@@ -84,7 +84,7 @@ constant phased_sum_length			:	integer :=8;
 constant num_channels				:	integer :=6;
 
 constant power_length: integer:=12;
-constant power_low_bit: integer:=6;
+constant power_low_bit: integer:=0;
 constant power_high_bit: integer:=power_low_bit+power_length-1;
 
 

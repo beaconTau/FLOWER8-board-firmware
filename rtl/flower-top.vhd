@@ -84,8 +84,8 @@ architecture rtl of flower_top is
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"11"; --start all terra/8channel versions at 16
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"00";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E8"; 
-	constant fw_month			: std_logic_vector(3 downto 0)  := x"2"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"05";
+	constant fw_month			: std_logic_vector(3 downto 0)  := x"3"; 
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"07";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	--signal clock_internal_10MHz_sys		:	std_logic;
@@ -122,7 +122,7 @@ architecture rtl of flower_top is
 	--signal spi_busy				:	std_logic;
 	---------------------------------------
 	--//data readout signals
-	--signal rdout_pckt_size		:	std_logic_vector(15 downto 0);e
+	--signal rdout_pckt_size		:	std_logic_vector(15 downto 0);
 	signal readout_data				:	std_logic_vector(31 downto 0);
 	signal readout_start_flag		:	std_logic;
 	signal readout_ram_rd_en		:	std_logic_vector(7 downto 0);
@@ -159,12 +159,14 @@ architecture rtl of flower_top is
 	signal ch5_data : std_logic_vector(31 downto 0);
 	signal ch6_data : std_logic_vector(31 downto 0);
 	signal ch7_data : std_logic_vector(31 downto 0);
-	--signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
+	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
 	signal phased_trig_scaler_bits : std_logic_vector(2*(num_beams+1) downto 0); --*moved to 24 bits, previously 12
+	signal trig_scaler_bits:  std_logic_vector(2*(num_beams+1) downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
-	--signal coinc_trig_internal : std_logic;
+	signal coinc_trig_internal : std_logic;
 	signal phased_trig_internal : std_logic ;
-	signal coinc_trig_internal : std_logic :='0';
+	signal phased_trig_bits_metadata : std_logic_vector(num_beams-1 downto 0);
+	signal coinc_trig_bits_metadata: std_logic_vector(7 downto 0);
 	signal trig_bits_metadata : std_logic_vector(num_beams-1 downto 0);
 	--//data chunks
 	signal ram_chunked_data : RAM_CHUNKED_DATA_TYPE;
@@ -424,6 +426,23 @@ begin
 	systrig_o   <= '0'; -- don't use differential output over mini-sas
 	-----------------------------------------
 	-----------------------------------------
+	proc_aggregate_rf_triggers: process(clock_internal_25MHz_loc)
+	begin
+		if rising_edge(clock_internal_25MHz_loc) then
+			if phased_trig_internal then
+				trig_bits_metadata<=phased_trig_bits_metadata;
+				trig_scaler_bits<=phased_trig_scaler_bits;
+			else
+				trig_bits_metadata(7 downto 0)<=coinc_trig_bits_metadata;
+				trig_bits_metadata(num_beams-1 downto 8)<=(others=>'0');
+				
+				trig_scaler_bits(23 downto 0)<=coinc_trig_scaler_bits;
+				trig_scaler_bits(2*(num_beams+1) downto 24)<=(others=>'0');
+			end if;
+		end if;
+	
+	end process;
+	
 	proc_assign_sma_output : process(registers(99)(0))
 	begin
 	case registers(99)(0) is
@@ -455,23 +474,23 @@ begin
 	SignalOut_clkB	=> internal_phased_trig_to_out_sma_en);
 	-----------------------------------------
 	-----------------------------------------
-	--xCOINC_TRIG : entity work.simple_trigger
-	--port map(
-	--	rst_i			=> reset_power_on,
-	--	clk_i			=> clock_internal_25MHz_loc,
-	--	clk_data_i	=> clock_internal_core,
-	--	registers_i	=> registers,
-	--	ch0_data_i	=> ch0_data,
-	--	ch1_data_i	=> ch1_data, 
-	--	ch2_data_i	=> ch2_data, 
-	--	ch3_data_i	=> ch3_data,
-	--	ch4_data_i	=> ch4_data,
-	--	ch5_data_i	=> ch5_data, 
-	--	ch6_data_i	=> ch6_data, 
-	--	ch7_data_i	=> ch7_data,
-	--	last_trig_bits_latched_o => trig_bits_metadata,
-	--	trig_bits_o => coinc_trig_scaler_bits,
-	--	coinc_trig_o=> coinc_trig_internal);
+	xCOINC_TRIG : entity work.simple_trigger
+	port map(
+		rst_i			=> reset_power_on,
+		clk_i			=> clock_internal_25MHz_loc,
+		clk_data_i	=> clock_internal_core,
+		registers_i	=> registers,
+		ch0_data_i	=> ch0_data,
+		ch1_data_i	=> ch1_data, 
+		ch2_data_i	=> ch2_data, 
+		ch3_data_i	=> ch3_data,
+		ch4_data_i	=> ch4_data,
+		ch5_data_i	=> ch5_data, 
+		ch6_data_i	=> ch6_data, 
+		ch7_data_i	=> ch7_data,
+		last_trig_bits_latched_o => coinc_trig_bits_metadata,
+		trig_bits_o => coinc_trig_scaler_bits,
+		coinc_trig_o=> coinc_trig_internal);
 	-----------------------------------------
 	-----------------------------------------
 	xPHASED_TRIG : entity work.phased_trigger
@@ -488,7 +507,7 @@ begin
 		ch5_data_i	=> ch5_data, 
 		ch6_data_i	=> ch6_data, 
 		ch7_data_i	=> ch7_data,
-		last_trig_bits_latched_o => trig_bits_metadata,
+		last_trig_bits_latched_o => phased_trig_bits_metadata,
 		trig_bits_o => phased_trig_scaler_bits,
 		phased_trig_o=> phased_trig_internal);
 	-----------------------------------------
@@ -511,7 +530,7 @@ begin
 		clk_i					=> clock_internal_25MHz_loc, --clock_internal_10MHz_loc,
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
-		phased_trig_bits_i 	=> phased_trig_scaler_bits,
+		trig_bits_i 	=> trig_scaler_bits,
 		pps_cycle_counter_i	=> internal_pps_cycle_counter,
 		scaler_to_read_o  => scaler_to_read_int);
 	--///////////////////////////////////////	

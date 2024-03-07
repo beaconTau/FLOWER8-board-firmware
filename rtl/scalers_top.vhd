@@ -27,7 +27,7 @@ entity scalers_top is
 		clk_i				:		in 	std_logic;
 		gate_i			:		in		std_logic;
 		reg_i				:		in		register_array_type;
-		phased_trig_bits_i : in std_logic_vector(2*(num_beams+1) downto 0);
+		trig_bits_i : in std_logic_vector(2*(num_beams+1) downto 0);
 		pps_cycle_counter_i : in std_logic_vector(47 downto 0);
 		
 		scaler_to_read_o  :   out	std_logic_vector(23 downto 0));
@@ -41,6 +41,7 @@ type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scal
 signal internal_scaler_array : scaler_array_type := (others=>(others=>'0'));
 signal latched_scaler_array : scaler_array_type; --//assigned after refresh pulse
 signal latched_pps_cycle_counter : std_logic_vector(47 downto 0);
+
 
 --//need to create a single pulse every Hz with width of 10 MHz clock period
 signal refresh_clk_counter_100Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
@@ -86,33 +87,33 @@ begin
 	end if;
 end process;
 --//scalers 0-11
-PhasedTrigScalers1Hz : for i in 0 to 2*(num_beams+1)-1 generate
-	xPHASED1Hz : scaler
+TrigScalers1Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xTRIG1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
-		count_i => phased_trig_bits_i(i),
+		count_i => trig_bits_i(i),
 		scaler_o => internal_scaler_array(i));
 end generate;
 --//scalers 12-23
-PhasedTrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
-	xPHASED1Hz : scaler
+TrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
+	xTRIG1HzGated : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
-		count_i => phased_trig_bits_i(i) and gate_i,
+		count_i => trig_bits_i(i) and gate_i,
 		scaler_o => internal_scaler_array(i+2*(num_beams+1)));
 end generate;
 --//scalers 24-35
-PhasedTrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
-	xPHASED100Hz : scaler
+TrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xTRIG100Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => internal_100Hz_or_100mHz_refresh,
-		count_i => phased_trig_bits_i(i),
+		count_i => trig_bits_i(i),
 		scaler_o => internal_scaler_array(i+4*(num_beams+1)));
 end generate;
 -------------------------------------		
@@ -136,84 +137,7 @@ begin
 		else
 			scaler_to_read_o<=latched_scaler_array(1)&latched_scaler_array(0);
 		end if;
-		/*
-		case reg_i(41)(7 downto 0) is
-			when x"00" =>
-				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
-			when x"01" =>
-				scaler_to_read_o <= latched_scaler_array(3) & latched_scaler_array(2);
-			when x"02" =>
-				scaler_to_read_o <= latched_scaler_array(5) & latched_scaler_array(4);
-			when x"03" =>
-				scaler_to_read_o <= latched_scaler_array(7) & latched_scaler_array(6);
-			when x"04" =>
-				scaler_to_read_o <= latched_scaler_array(9) & latched_scaler_array(8);
-			when x"05" =>
-				scaler_to_read_o <= latched_scaler_array(11) & latched_scaler_array(10);
-			when x"06" =>
-				scaler_to_read_o <= latched_scaler_array(13) & latched_scaler_array(12);
-			when x"07" =>
-				scaler_to_read_o <= latched_scaler_array(15) & latched_scaler_array(14);
-			when x"08" =>
-				scaler_to_read_o <= latched_scaler_array(17) & latched_scaler_array(16);
-			when x"09" =>
-				scaler_to_read_o <= latched_scaler_array(19) & latched_scaler_array(18);
-			when x"0A" =>
-				scaler_to_read_o <= latched_scaler_array(21) & latched_scaler_array(20);
-			when x"0B" =>
-				scaler_to_read_o <= latched_scaler_array(23) & latched_scaler_array(22);
-			when x"0C" =>
-				scaler_to_read_o <= latched_scaler_array(25) & latched_scaler_array(24);
-			when x"0D" =>
-				scaler_to_read_o <= latched_scaler_array(27) & latched_scaler_array(26);
-			when x"0E" =>
-				scaler_to_read_o <= latched_scaler_array(29) & latched_scaler_array(28);
-			when x"0F" =>
-				scaler_to_read_o <= latched_scaler_array(31) & latched_scaler_array(30);	
-			when x"10" =>
-				scaler_to_read_o <= latched_scaler_array(33) & latched_scaler_array(32);
-			when x"11" =>
-				scaler_to_read_o <= latched_scaler_array(35) & latched_scaler_array(34);
-			when x"12" =>
-				scaler_to_read_o <= latched_scaler_array(37) & latched_scaler_array(36);
-			when x"13" =>
-				scaler_to_read_o <= latched_scaler_array(39) & latched_scaler_array(38);
-			when x"14" =>
-				scaler_to_read_o <= latched_scaler_array(41) & latched_scaler_array(40);
-			when x"15" =>
-				scaler_to_read_o <= latched_scaler_array(43) & latched_scaler_array(42);
-			when x"16" =>
-				scaler_to_read_o <= latched_scaler_array(45) & latched_scaler_array(44);
-			when x"17" =>
-				scaler_to_read_o <= latched_scaler_array(47) & latched_scaler_array(46);
-			when x"18" =>
-				scaler_to_read_o <= latched_scaler_array(49) & latched_scaler_array(48);
-			when x"19" =>
-				scaler_to_read_o <= latched_scaler_array(51) & latched_scaler_array(50);	
-			when x"1A" =>
-				scaler_to_read_o <= latched_scaler_array(53) & latched_scaler_array(52);				
-			when x"1B" =>
-				scaler_to_read_o <= latched_scaler_array(55) & latched_scaler_array(54);				
-			when x"1C" =>
-				scaler_to_read_o <= latched_scaler_array(57) & latched_scaler_array(56);				
-			when x"1D" =>
-				scaler_to_read_o <= latched_scaler_array(59) & latched_scaler_array(58);				
-			when x"1E" =>
-				scaler_to_read_o <= latched_scaler_array(61) & latched_scaler_array(60);				
-			when x"1F" =>
-				scaler_to_read_o <= latched_scaler_array(63) & latched_scaler_array(62);		
-			--pps cycle counter here
-			when x"20" =>
-				scaler_to_read_o <= latched_pps_cycle_counter(23 downto 0);	
-			when x"21" =>
-				scaler_to_read_o <= latched_pps_cycle_counter(47 downto 24);				
-			--end pps cycle counter
-			
-			when others =>
-				scaler_to_read_o <= latched_scaler_array(1) & latched_scaler_array(0);
-			
-		end case;
-		*/
+		
 	end if;
 end process;
 
