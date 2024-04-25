@@ -298,7 +298,8 @@ begin
 		phase_trig_i=> phased_trig_internal, --exists :)
 		ext_trig_i	=> internal_sma_trigger_input_assign, --(sma_aux1_io and (not registers(99)(1))), --use SMA1 for ext trig input. If assigned as secondary board in sync scheme, ignore
 		pps_i			=> internal_delayed_pps, --gpio_sas_io(0), 
-		trig_bits_metadata_i => trig_bits_metadata,
+		coinc_trig_bits_metadata_i => coinc_trig_bits_metadata,
+		phased_trig_bits_metadata_i => phased_trig_bits_metadata,
 		dat_rdy_o	=> gpio_sas_io(2),
 		event_write_busy_o => internal_event_write_busy,
 		latched_timestamp_o  => latched_timestamp,
@@ -426,22 +427,6 @@ begin
 	systrig_o   <= '0'; -- don't use differential output over mini-sas
 	-----------------------------------------
 	-----------------------------------------
-	proc_aggregate_rf_triggers: process(clock_internal_25MHz_loc)
-	begin
-		if rising_edge(clock_internal_25MHz_loc) then
-			if phased_trig_internal then
-				trig_bits_metadata<=phased_trig_bits_metadata;
-				trig_scaler_bits<=phased_trig_scaler_bits;
-			else
-				trig_bits_metadata(7 downto 0)<=coinc_trig_bits_metadata;
-				trig_bits_metadata(num_beams-1 downto 8)<=(others=>'0');
-				
-				trig_scaler_bits(23 downto 0)<=coinc_trig_scaler_bits;
-				trig_scaler_bits(2*(num_beams+1) downto 24)<=(others=>'0');
-			end if;
-		end if;
-	
-	end process;
 	
 	proc_assign_sma_output : process(registers(99)(0))
 	begin
@@ -530,7 +515,8 @@ begin
 		clk_i					=> clock_internal_25MHz_loc, --clock_internal_10MHz_loc,
 		gate_i					=> gpio_sas_io(0), --pps from controller
 		reg_i						=> registers,
-		trig_bits_i 	=> trig_scaler_bits,
+		coinc_trig_bits_i 	=> coinc_trig_scaler_bits,
+		phased_trig_bits_i 	=> phased_trig_scaler_bits,
 		pps_cycle_counter_i	=> internal_pps_cycle_counter,
 		scaler_to_read_o  => scaler_to_read_int);
 	--///////////////////////////////////////	

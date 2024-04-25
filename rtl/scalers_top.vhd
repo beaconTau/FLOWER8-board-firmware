@@ -23,11 +23,13 @@ entity scalers_top is
 	   addr_top_scaler_rate_select: std_logic_vector(7 downto 0) := x"2F";
 		scaler_width   : integer := 12);
 	port(
-		rst_i				:		in		std_logic;
-		clk_i				:		in 	std_logic;
-		gate_i			:		in		std_logic;
-		reg_i				:		in		register_array_type;
-		trig_bits_i : in std_logic_vector(2*(num_beams+1) downto 0);
+		rst_i						:		in		std_logic;
+		clk_i						:		in 	std_logic;
+		gate_i		   		:		in		std_logic;
+		reg_i				   	:		in		register_array_type;
+		coinc_trig_bits_i		:		in 	std_logic_vector(23 downto 0);
+		phased_trig_bits_i	:		in 	std_logic_vector(2*(num_beams)+2 downto 0);
+		
 		pps_cycle_counter_i : in std_logic_vector(47 downto 0);
 		
 		scaler_to_read_o  :   out	std_logic_vector(23 downto 0));
@@ -35,13 +37,19 @@ end scalers_top;
 
 architecture rtl of scalers_top is
 
-constant num_scalers : integer := 6*(num_beams+1)+1;
-type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
+constant phased_num_scalers : integer := 6*(num_beams+1);
+constant coinc_num_scalers: integer:=6*(num_channels+1);
+type phased_scaler_array_type is array(phased_num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
+type coinc_scaler_array_type is array(coinc_num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
 
-signal internal_scaler_array : scaler_array_type := (others=>(others=>'0'));
+signal phased_internal_scaler_array : phased_scaler_array_type := (others=>(others=>'0'));
+signal coinc_internal_scaler_array : coinc_scaler_array_type := (others=>(others=>'0'));
+
+constant num_scalers: integer:=phased_num_scalers+coinc_num_scalers+6;
+type scaler_array_type is array(num_scalers-1 downto 0) of std_logic_vector(scaler_width-1 downto 0);
+signal internal_scaler_array:scaler_array_type;
 signal latched_scaler_array : scaler_array_type; --//assigned after refresh pulse
 signal latched_pps_cycle_counter : std_logic_vector(47 downto 0);
-
 
 --//need to create a single pulse every Hz with width of 10 MHz clock period
 signal refresh_clk_counter_100Hz 	:	std_logic_vector(27 downto 0) := (others=>'0');
@@ -79,43 +87,87 @@ case  reg_i(to_integer(unsigned(addr_top_scaler_rate_select)))(0) is
 	end case;
 end process;
 		
---//scaler 63 is the `scaler pps'
+--//scaler 0... 1 empty
 proc_scaler_pps : process(clk_i, refresh_clk_1Hz)
 begin
 	if rising_edge(clk_i) and refresh_clk_1Hz = '1' then
-		internal_scaler_array(6*(num_beams+1)) <= internal_scaler_array(6*(num_beams+1)) + 1;
+		internal_scaler_array(0) <= internal_scaler_array(0) + 1;
 	end if;
 end process;
---//scalers 0-11
-TrigScalers1Hz : for i in 0 to 2*(num_beams+1)-1 generate
-	xTRIG1Hz : scaler
+
+--//scalers 2,3,4,5
+proc_assign_pps_counter : process(clk_i) --maybe use the 1hz refresh clock, idk
+begin 
+	if rising_edge(clk_i) then
+		internal_scaler_array(2) <= pps_cycle_counter_i(11 downto 0);
+		internal_scaler_array(3) <= pps_cycle_counter_i(23 downto 12);
+		internal_scaler_array(4) <= pps_cycle_counter_i(35 downto 24);
+		internal_scaler_array(5) <= pps_cycle_counter_i(47 downto 36);
+	end if;
+end process;
+
+--//scalers 6-24
+CoincTrigScalers1Hz : for i in 0 to 17 generate
+	xCOINC1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
-		count_i => trig_bits_i(i),
-		scaler_o => internal_scaler_array(i));
+		count_i => coinc_trig_bits_i(i),
+		scaler_o => internal_scaler_array(i+6));
 end generate;
---//scalers 12-23
-TrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
-	xTRIG1HzGated : scaler
+--//scalers 25-43 
+CoincTrigScalers1HzGated : for i in 0 to 17 generate
+	xCOINCGATED1Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
-		count_i => trig_bits_i(i) and gate_i,
-		scaler_o => internal_scaler_array(i+2*(num_beams+1)));
+		count_i => coinc_trig_bits_i(i) and gate_i,
+		scaler_o => internal_scaler_array(i+2*(num_channels+1)+6));
 end generate;
---//scalers 24-35
-TrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
-	xTRIG100Hz : scaler
+--//scalers 44-60
+CoincTrigScalers100Hz : for i in 0 to 17 generate
+	xCOINC100Hz : scaler
 	port map(
 		rst_i => rst_i,
 		clk_i => clk_i,
-		refresh_i => internal_100Hz_or_100mHz_refresh,
-		count_i => trig_bits_i(i),
-		scaler_o => internal_scaler_array(i+4*(num_beams+1)));
+		refresh_i => refresh_clk_100Hz,
+		count_i => coinc_trig_bits_i(i),
+		scaler_o => internal_scaler_array(i+4*(num_channels+1)+6));
 end generate;
+
+--//scalers 61-
+PhasedTrigScalers1Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASED1Hz : scaler
+	port map(
+		rst_i => rst_i,
+		clk_i => clk_i,
+		refresh_i => refresh_clk_1Hz,
+		count_i => phased_trig_bits_i(i),
+		scaler_o => internal_scaler_array(i+60));
+end generate;
+--//scalers 
+PhasedTrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASEDGATED1Hz : scaler
+	port map(
+		rst_i => rst_i,
+		clk_i => clk_i,
+		refresh_i => refresh_clk_1Hz,
+		count_i => phased_trig_bits_i(i) and gate_i,
+		scaler_o => internal_scaler_array(integer(i+2*(num_beams+1)+60)));
+end generate;
+--//scalers 
+PhasedTrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
+	xPHASED100Hz : scaler
+	port map(
+		rst_i => rst_i,
+		clk_i => clk_i,
+		refresh_i => refresh_clk_100Hz,
+		count_i => phased_trig_bits_i(i),
+		scaler_o => internal_scaler_array(integer(i+4*(num_beams+1)+60)));
+end generate;
+
 -------------------------------------		
 proc_save_scalers : process(rst_i, clk_i, reg_i)
 begin
@@ -132,8 +184,8 @@ begin
 		
 	elsif rising_edge(clk_i) then
 	
-		if unsigned(reg_i(41)(7 downto 0))<6*(num_beams+1) then --42 beam limit from this before the address exceeds 8 bits
-			scaler_to_read_o<=latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0)))+1)&latched_scaler_array(to_integer(unsigned(reg_i(41)(7 downto 0))));
+		if unsigned(reg_i(41)(8 downto 0))<6*(num_beams+1) then --9 bit address!!! 42 beam limit from this before the address exceeds 8 bits
+			scaler_to_read_o<=latched_scaler_array(to_integer(unsigned(reg_i(41)(8 downto 0)))+1)&latched_scaler_array(to_integer(unsigned(reg_i(41)(8 downto 0))));
 		else
 			scaler_to_read_o<=latched_scaler_array(1)&latched_scaler_array(0);
 		end if;

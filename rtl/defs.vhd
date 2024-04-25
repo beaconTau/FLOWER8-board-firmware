@@ -73,55 +73,8 @@ type register_array_type is array (2**define_address_size-1 downto 0)
 --constant define_beam_bits			: integer := define_wave2beam_bits+3; --//effective resolution increased by 3 bits (8 antennas)
 --constant define_sign_bit			: integer := define_beam_bits;
 constant num_beams 					:	integer :=42;
-constant num_power_bits 			:	integer :=24;
-constant phased_sum_bits 			:	integer :=11;
-constant phased_sum_power_bits 	:	integer :=22;
-constant power_sum_bits				:	integer :=24; --actually 25 but this fits into the io regs
-constant input_power_thesh_bits	:	integer :=12;
+constant num_channels 				:	integer :=8;
 
-constant streaming_buffer_length	:	integer :=92;
-constant phased_sum_length			:	integer :=8;
-constant num_channels				:	integer :=6;
-
-constant power_length: integer:=12;
-constant power_low_bit: integer:=0;
-constant power_high_bit: integer:=power_low_bit+power_length-1;
-
-
-
-type antenna_delays is array (num_beams-1 downto 0,num_channels-1 downto 0) of integer;
-constant beam_delays : antenna_delays := (others=>(others=>46));
---constant beam_delays is array (num_beams-1 down to 0) of antenna_delay :=((46,24,54,58,49,72),(46,46,46,46,46,46),others<=(0,0,0,0,0,0)); --add base offset of 46
-
-
---//data split up to samples
---type beam_data_type is array (2*define_serdes_factor*define_word_size-1 downto 0) of 
---	signed(define_beam_bits-1 downto 0);
---type beam_data_type is array (2*define_serdes_factor*define_word_size-1 downto 0) of 
---	std_logic_vector(define_beam_bits-1 downto 0);		
-
---constant define_num_beams : integer := 15;
---type array_of_beams_type is array (define_num_beams-1 downto 0) 
---	of std_logic_vector(2*define_serdes_factor*define_word_size-1 downto 0);
-	
---////////////////////////////////
---//stuff for power detection 
---constant pow_lut_size 	: integer := 2**(define_beam_bits-1);
---constant define_pow_sum_range  : integer := 16; --//allow 16 bits
-
---type inst_power_array_type is array(2*define_serdes_factor-1 downto 0) of std_logic_vector(define_pow_sum_range-1 downto 0);
---type full_inst_power_array_type is array(define_num_beams-1 downto 0) of inst_power_array_type;
-
---type pipe_full_inst_power_array_type is array(define_num_beams-1 downto 0) of 
---	std_logic_vector(4*define_serdes_factor*define_pow_sum_range-1 downto 0);
-
---constant define_num_power_sums : integer := 8; --//number of sums within parallel data clock
---type sum_power_type is array(define_num_beams-1 downto 0) of 
---	std_logic_vector(define_num_power_sums*(define_pow_sum_range+1)-1 downto 0);  --//define_pos_sum_range+1 (sum of adjacent samples)
-	
---/////////
---constant define_16avg_pow_sum_range : integer := 20; --//20 bits (16 bits per sample, 16 samples)
---type average_power_16samp_type is array(define_num_beams-1 downto 0) of std_logic_vector(define_16avg_pow_sum_range-1 downto 0);
 ----------------------------------------------------------------------
 end defs;
 
