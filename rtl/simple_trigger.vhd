@@ -293,7 +293,7 @@ begin
 		if coincidence_trigger_reg = "01" then
 			coincidence_trigger <= '1';
 			--for i in 0 to 7 loop
-			--	last_trig_bits_latched_o(i) <= channel_trig_reg(i)(0);
+			last_trig_bits_latched_o(i) <= channel_trig_reg(i)(0);
 			--end loop;
 		else
 			coincidence_trigger <= '0';
