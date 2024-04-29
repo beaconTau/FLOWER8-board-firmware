@@ -96,13 +96,13 @@ signal input_servo_thresh : thresh_input;
 type streaming_data_array is array(num_channels-1 downto 0, streaming_buffer_length-1 downto 0) of signed(7 downto 0);
 signal streaming_data : streaming_data_array := (others=>(others=>(others=>'0'))); --pipeline data
 
-type phased_arr_buff is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(phased_sum_bits+1 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
+type phased_arr_buff is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(9 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
 signal phased_beam_waves_buff: phased_arr_buff;
 
-type phased_arr is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(phased_sum_bits-1 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
+type phased_arr is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(6 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
 signal phased_beam_waves: phased_arr;
 
-type square_waveform is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of unsigned(phased_sum_power_bits-1 downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
+type square_waveform is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of unsigned(13 downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
 signal phased_power : square_waveform;
 
 type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
@@ -159,6 +159,7 @@ port(
 		SignalIn_clkA	: in	std_logic;
 		SignalOut_clkB	: out	std_logic);
 end component;
+
 component flag_sync is
 port(
 	clkA			: in	std_logic;
@@ -167,6 +168,14 @@ port(
    busy_clkA	: out	std_logic;
    out_clkB		: out	std_logic);
 end component;
+
+component power_lut is --dont use this. This generates !1.5 million bits in memory
+port(
+		clk_i    : in std_logic;
+		a			: in	signed(6 downto 0);
+		z			: out	unsigned(13 downto 0));
+end component;
+
 --------------
 
 begin
@@ -253,12 +262,12 @@ begin
 					+resize(streaming_data(4,beam_delays(i,2)-(j-7)),10)
 					+resize(streaming_data(5,beam_delays(i,3)-(j-7)),10);
 					
-				if(to_integer(phased_beam_waves_buff(i,j))>127) then
-					phased_beam_waves(i,j)<=abs(b"01111111");--saturate max
-				elsif(to_integer(phased_beam_waves_buff(i,j))<-127) then
-				  phased_beam_waves(i,j)<=abs(b"10000000"); --saturate min
+				if(to_integer(phased_beam_waves_buff(i,j))>63) then
+					phased_beam_waves(i,j)<=b"0111111";--saturate max
+				elsif(to_integer(phased_beam_waves_buff(i,j))<-63) then
+				  phased_beam_waves(i,j)<=b"1000000"; --saturate min
 				else
-					phased_beam_waves(i,j)<=abs(resize(phased_beam_waves_buff(i,j),8)); --this can be 10, 9 fits in a 1/4 of dsp. the rest of the calculations souldnt overflow
+					phased_beam_waves(i,j)<=resize(phased_beam_waves_buff(i,j),7); --this can be 10, 9 fits in a 1/4 of dsp. the rest of the calculations souldnt overflow
 					--phased_beam_waves(i,j)<=phased_beam_waves_buff(i,j)(9)&phased_beam_waves_buff(i,j)(6 downto 0); --send it through
 				end if;	
 
@@ -268,20 +277,32 @@ begin
 	end if;
 
 end process;
-------------------------------------------------
-proc_do_beam_square : process(clk_data_i,rst_i)
-begin
 
-	if rising_edge(clk_data_i) then
-		for i in 0 to num_beams-1 loop
-			for j in 0 to phased_sum_length-1 loop
-				phased_power(i,j)<=unsigned(phased_beam_waves(i,j))*unsigned(phased_beam_waves(i,j));
-				
-			end loop;
-		end loop;
-	
-	end if;
-end process;
+
+DO_POWER_BEAM : for i in 0 to num_beams-1 generate
+	DO_POWER_SMAPLE : for j in 0 to phased_sum_length-1 generate
+		xPOWERLUT : power_lut
+		port map(
+		clk_i => clk_data_i,
+		a				=> phased_beam_waves(i,j),
+		z				=> phased_power(i,j));
+	end generate;
+end generate;
+
+------------------------------------------------
+--proc_do_beam_square : process(clk_data_i,rst_i)
+--begin
+--
+--	if rising_edge(clk_data_i) then
+--		for i in 0 to num_beams-1 loop
+--			for j in 0 to phased_sum_length-1 loop
+--				phased_power(i,j)<=unsigned(phased_beam_waves(i,j))*unsigned(phased_beam_waves(i,j));
+--				
+--			end loop;
+--		end loop;
+--	
+--	end if;
+--end process;
 ------------------------------------------------
 		
 proc_do_beam_sum : process(clk_data_i,rst_i)
