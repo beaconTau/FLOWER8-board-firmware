@@ -160,8 +160,8 @@ begin
 
 		--//masking + trigger configurations
 		registers_io(48) <= x"0000FF";   --// channel masking [48]
-		registers_io(80) <= x"FFFFFF";   --// beam masks for trigger [80]
-		registers_io(81) <= x"0001FF";   --// trig holdoff - lower 16 bits [81]
+		registers_io(80) <= x"FFFFFF";   --// lower beam mask for trigger [80]
+		registers_io(81) <= x"0001FF";   --// upper beam mask for trigger [81]
 		registers_io(82) <= x"000000";	--// beam enables+phased trigger (num_beams->1 enables, LSb=trigger enable) [82]
 		registers_io(75) <= x"00FF00";   --// external trigger input configuration [75]
 		registers_io(83) <= x"000C03";   --// external trigger output configuration [83]

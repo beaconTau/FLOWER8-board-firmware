@@ -59,7 +59,7 @@ constant streaming_buffer_length: integer := 70;
 constant window_length:integer := 16;
 constant baseline: signed(7 downto 0) := x"80";
 constant phased_sum_bits: integer := 8;
-constant phased_sum_length: integer := 24; --not sure if it should be 8 or 16. longer windows smooths things. shorter window gives higher peak
+constant phased_sum_length: integer := 16; --not sure if it should be 8 or 16. longer windows smooths things. shorter window gives higher peak
 constant phased_sum_power_bits: integer := 16;
 constant num_power_bits: integer := 24;
 constant power_sum_bits:	integer := 24; --actually 25 but this fits into the io regs
@@ -71,40 +71,41 @@ constant num_div: integer := 4;--integer(log2(real(phased_sum_length)));
 constant pad_zeros: std_logic_vector(num_div-1 downto 0):=(others=>'0');
 constant num_channels: integer:=6;
 --constant threshold_offset: integer:= 3000; --if this works I can add it to the registers. might not work
-
 signal threshold_offset: unsigned(11 downto 0):=x"000";
 
 type antenna_delays is array (num_beams-1 downto 0,num_channels-1 downto 0) of integer;
---constant beam_delays : antenna_delays := ((12,11,10,9),(45,45,45,45)); --it will optimize away a lot of the streaming buffer if these numbers are small
-constant beam_delays : antenna_delays := (others=>(others=>32)); --try to force only beam 0 to trigger
-
---(7,26,47,68),(7,25,45,65),(7,24,43,61),(7,23,40,57),(7,21,37,53),(7,20,34,48),(7,18,31,43),(7,16,28,37),(7,15,24,32),(7,13,21,27),(7,11,18,21),(7,10,15,17),(7,8,12,12),(7,7,9,8),(9,8,9,7),(12,10,10,7),
-
-
---constant beam_delays : antenna_delays := ((4,23,44,65),(4,22,42,62),(4,21,40,58),(4,20,37,54),(4,18,34,50),(4,17,31,45),(4,15,28,40),(4,13,25,34),(4,12,21,29),(4,10,18,24),(4,8,15,18),(4,7,12,14),(4,5,9,9),(4,4,6,5),(6,5,6,4),(9,7,7,4));
--- 8 beams!!! signal beam_delays: antenna_delays:=(4,23,44,65),(4,21,40,58),(4,18,34,48),(4,14,27,37),(4,11,19,26),(4,7,12,15),(4,4,6,5),(9,7,7,4));
---honestly might be useful to add a beam of zero delay. the above have cable delays included into the calc
+--constant beam_delays : antenna_delays := (others=>(others=>32)); --try to force only beam 0 to trigger
+	
+constant beam_delays: antenna_delays:= ((25,9,25,40,31,8),(32,12,22,39,33,8),(38,14,19,36,33,8),(42,16,15,31,32,8),
+	(44,17,11,25,30,8),(45,20,8,19,27,9),(20,9,23,35,27,8),(27,11,21,34,29,8),(33,13,18,32,29,8),
+	(36,15,14,27,28,8),(38,16,10,21,26,8),(40,19,8,17,24,10),(15,8,20,29,22,8),(21,10,18,28,24,8),
+	(26,12,16,26,24,8),(29,13,13,22,23,8),(31,15,9,17,21,8),(33,18,8,14,20,11),(11,8,18,23,17,9),
+	(15,9,15,21,17,8),(18,10,13,19,18,8),(21,12,11,16,17,8),(22,13,8,12,16,8),(25,16,8,10,16,11));
 
 
+	
+--The input thresholds read from the 24 bit regs. 12 bits per threshold
 type thresh_input is array (num_beams-1 downto 0) of unsigned(input_power_thesh_bits-1 downto 0);
 signal input_trig_thresh : thresh_input;
 signal input_servo_thresh : thresh_input;
 
---type streaming_data_array is array(7 downto 0) of std_logic_vector((streaming_buffer_length*8-1) downto 0);
---signal streaming_data : streaming_data_array := (others=>(others=>'0')); --pipeline data
-
+--streaming buffer for keeping samples for when they need to be used
 type streaming_data_array is array(num_channels-1 downto 0, streaming_buffer_length-1 downto 0) of signed(7 downto 0);
 signal streaming_data : streaming_data_array := (others=>(others=>(others=>'0'))); --pipeline data
 
+--temp coherent summed waveform buffer to keep at 10 bits and then resize to 7 bits
 type phased_arr_buff is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(9 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
 signal phased_beam_waves_buff: phased_arr_buff;
 
+--coherently summed waveform at 7 bits
 type phased_arr is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of signed(6 downto 0);-- range 0 to 2**phased_sum_bits-1; --phased sum... log2(16*8)=7bits
 signal phased_beam_waves: phased_arr;
 
+--power of the coherently summed waveform - calculated with 7 bit lut
 type square_waveform is array (num_beams-1 downto 0,phased_sum_length-1 downto 0) of unsigned(13 downto 0);-- range 0 to 2**phased_sum_power_bits-1;--std_logic_vector(phased_sum_power_bits-1 downto 0);
 signal phased_power : square_waveform;
 
+--the full threshold values (input + offset) expanded to the 23 bits, the full power sum, the t2o intermediary power sums, and finally the averaged power (power sum shifted down by 4 bits down)
 type power_array is array (num_beams-1 downto 0) of unsigned(num_power_bits-1 downto 0);-- range 0 to 2**num_power_bits-1;--std_logic_vector(num_power_bits-1 downto 0); --log2(6*(16*6)^2) max power possible
 signal trig_beam_thresh : power_array:=(others=>(others=>'0')) ; --trigger thresholds for all beams
 signal servo_beam_thresh : power_array:=(others=>(others=>'0')) ;--(others=>(others=>'0')) --servo thresholds for all beams
@@ -114,6 +115,7 @@ signal power_sum1: power_array;
 signal avg_power: power_array;
 signal latched_power_out: power_array;
 
+--array to hold the triggering and servoing beams
 signal triggering_beam: std_logic_vector(num_beams-1 downto 0):=(others=>'0');
 signal servoing_beam: std_logic_vector(num_beams-1 downto 0):=(others=>'0');
 
@@ -169,12 +171,13 @@ port(
    out_clkB		: out	std_logic);
 end component;
 
-component power_lut is --dont use this. This generates !1.5 million bits in memory
+component power_lut is 
 port(
 		clk_i    : in std_logic;
 		a			: in	signed(6 downto 0);
 		z			: out	unsigned(13 downto 0));
 end component;
+
 
 --------------
 
@@ -198,7 +201,7 @@ begin
 	if rising_edge(clk_data_i) then
 		--streaming_buffer_length is an excessive value for trying to get a trigger out and recording data.
 			
-		streaming_data(0,1)<=signed(ch0_data_i(15 downto 8))-baseline;
+		streaming_data(0,1)<=signed(ch0_data_i(15 downto 8))-baseline; --WHEN I PUT THIS ON REAL BEACON I WILL NEED TO MATCH THESE TO THE HPOL CHANS + BROKEN CHAN
 		streaming_data(0,0)<=signed(ch0_data_i(7 downto 0))-baseline;
 			
 		streaming_data(1,1)<=signed(ch1_data_i(15 downto 8))-baseline;
@@ -207,7 +210,6 @@ begin
 		streaming_data(2,1)<=signed(ch4_data_i(15 downto 8))-baseline;
 		streaming_data(2,0)<=signed(ch4_data_i(7 downto 0))-baseline;
 		
-
 		streaming_data(3,1)<=signed(ch5_data_i(15 downto 8))-baseline;
 		streaming_data(3,0)<=signed(ch5_data_i(7 downto 0))-baseline;
 
@@ -279,30 +281,30 @@ begin
 end process;
 
 
-DO_POWER_BEAM : for i in 0 to num_beams-1 generate
-	DO_POWER_SMAPLE : for j in 0 to phased_sum_length-1 generate
-		xPOWERLUT : power_lut
-		port map(
-		clk_i => clk_data_i,
-		a				=> phased_beam_waves(i,j),
-		z				=> phased_power(i,j));
-	end generate;
-end generate;
+--DO_POWER_BEAM : for i in 0 to num_beams-1 generate
+--	DO_POWER_SAMPLE : for j in 0 to phased_sum_length-1 generate
+--		xPOWERLUT : power_lut
+--		port map(
+--		clk_i => clk_data_i,
+--		a				=> phased_beam_waves(i,j),
+--		z				=> phased_power(i,j)(13 downto 0));
+--	end generate;
+--end generate;
 
 ------------------------------------------------
---proc_do_beam_square : process(clk_data_i,rst_i)
---begin
---
---	if rising_edge(clk_data_i) then
---		for i in 0 to num_beams-1 loop
---			for j in 0 to phased_sum_length-1 loop
---				phased_power(i,j)<=unsigned(phased_beam_waves(i,j))*unsigned(phased_beam_waves(i,j));
---				
---			end loop;
---		end loop;
---	
---	end if;
---end process;
+proc_do_beam_square : process(clk_data_i,rst_i)
+begin
+
+	if rising_edge(clk_data_i) then
+		for i in 0 to num_beams-1 loop
+			for j in 0 to phased_sum_length-1 loop
+				phased_power(i,j)<=unsigned(phased_beam_waves(i,j))*unsigned(phased_beam_waves(i,j));
+				
+			end loop;
+		end loop;
+	
+	end if;
+end process;
 ------------------------------------------------
 		
 proc_do_beam_sum : process(clk_data_i,rst_i)
@@ -430,13 +432,14 @@ TRIGBEAMMASKA : for i in 0 to 23 generate --beam masks. 1 == on
 	SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base)))(i), --trig channel mask
 	SignalOut_clkB	=> internal_trigger_beam_mask(i));
 end generate;
-TRIGBEAMMASKB : for i in 0 to num_beams-1-24 generate --beam masks. 1 == on
-	xTRIGBEAMMASKSYNC : signal_sync
-	port map(
-	clkA	=> clk_i,   clkB	=> clk_data_i,
-	SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base_extra)))(i), --trig channel mask
-	SignalOut_clkB	=> internal_trigger_beam_mask(i+24));
-end generate;
+
+--TRIGBEAMMASKB : for i in 0 to num_beams-1-24 generate --beam masks. 1 == on
+--	xTRIGBEAMMASKSYNC : signal_sync
+--	port map(
+--	clkA	=> clk_i,   clkB	=> clk_data_i,
+--	SignalIn_clkA	=> registers_i(to_integer(unsigned(phased_trig_reg_base_extra)))(i), --trig channel mask
+--	SignalOut_clkB	=> internal_trigger_beam_mask(i+24));
+--end generate;
 ------------
 
 ----TRIGGER OUT!!
@@ -459,7 +462,6 @@ TrigToScalers	:	 for i in 0 to num_beams-1 generate
 		busy_clkA	=> open,
 		out_clkB		=> trig_bits_o(i+1));
 end generate TrigToScalers;
-
 
 servoscaler: flag_sync
 	port map(
