@@ -48,8 +48,8 @@ signal internal_adc_serial_data : std_logic_vector(7 downto 0) := (others=>'0');
 signal internal_adc_parallel_data : std_logic_vector(adc_data_parallel_width-1 downto 0) := (others=>'0');
 signal internal_serdes_outclk	: std_logic;
 
-signal internal_fifo_wr_en : std_logic;
-signal internal_rx_dat_valid : std_logic_vector(2 downto 0);-- := (others=>'0');
+signal internal_fifo_wr_en : std_logic:='0';
+signal internal_rx_dat_valid : std_logic:='0';-- := (others=>'0');
 signal internal_rx_dat_valid_flag : std_logic := '0';
 
 component rxserdes
@@ -91,7 +91,7 @@ port map(
 --//FIFO, 8-words deep 8/19
 xRXFIFO : entity work.rx_fifo(syn)
 port map(
-	aclr			=> rst_i or (not internal_rx_dat_valid(1)),
+	aclr			=> rst_i,
 	data			=> internal_adc_parallel_data,
 	rdclk			=> clk_i,
 	rdreq			=> rx_fifo_rd_i,
@@ -101,12 +101,13 @@ port map(
 	rdusedw 		=> rx_fifo_rdusedw_o,	
 	rdempty => open, wrfull => open, wrusedw => open);
 	
+
 --// write ADC data to fifo, needs commanding from sw to begin
 proc_write_fifo : process(internal_serdes_outclk, internal_rx_dat_valid)
 begin	
-	if internal_rx_dat_valid(0) = '0'  then
+	if internal_rx_dat_valid = '0'  then
 		internal_fifo_wr_en	<= '0';
-	elsif rising_edge(internal_serdes_outclk) and internal_rx_dat_valid(internal_rx_dat_valid'length-1) = '1' then
+	elsif rising_edge(internal_serdes_outclk) and internal_rx_dat_valid = '1' then
 		internal_fifo_wr_en	<= '1';
 	end if;		
 end process;
@@ -114,11 +115,30 @@ end process;
 proc_data_valid : process(internal_serdes_outclk, rst_i)
 begin
 	if rst_i = '1' then	
-		internal_rx_dat_valid(internal_rx_dat_valid'length-1 downto 0) <= (others =>'0');
+		internal_rx_dat_valid <= '0';
 	elsif rising_edge(internal_serdes_outclk) then
-		internal_rx_dat_valid <= internal_rx_dat_valid(internal_rx_dat_valid'length-2 downto 0) & internal_rx_dat_valid_flag;
+			internal_rx_dat_valid <= internal_rx_dat_valid_flag;
 	end if;
 end process;
+
+--proc_write_fifo : process(internal_serdes_outclk, internal_rx_dat_valid)
+--begin	
+--	if internal_rx_dat_valid(0) = '0'  then
+--		internal_fifo_wr_en	<= '0';
+--	elsif rising_edge(internal_serdes_outclk) and internal_rx_dat_valid(internal_rx_dat_valid'length-1) = '1' then
+--		internal_fifo_wr_en	<= '1';
+--	end if;		
+--end process;
+--// establish a data-valid flag 
+--proc_data_valid : process(internal_serdes_outclk, rst_i)
+--begin
+--	if rst_i = '1' then	
+--		internal_rx_dat_valid(internal_rx_dat_valid'length-1 downto 0) <= (others =>'0');
+--	elsif rising_edge(internal_serdes_outclk) then
+--			internal_rx_dat_valid <= internal_rx_dat_valid(internal_rx_dat_valid'length-2 downto 0) & internal_rx_dat_valid_flag;
+--	end if;
+--end process;
+
 ---------------------------------------------------------	
 xDATVALIDSYNC : signal_sync
 port map(
@@ -126,5 +146,7 @@ port map(
 		clkB				=> internal_serdes_outclk,
 		SignalIn_clkA	=> registers_i(to_integer(unsigned(adc_dat_valid_reg_adr)))(8), --data valid from software
 		SignalOut_clkB	=> internal_rx_dat_valid_flag);	
+		
 ---------------------------------------------------------
 end rtl;
+

@@ -84,8 +84,8 @@ architecture rtl of flower_top is
 	constant fw_version_maj	: std_logic_vector(7 downto 0)  := x"11"; --start all terra/8channel versions at 16
 	constant fw_version_min	: std_logic_vector(7 downto 0)  := x"00";
 	constant fw_year			: std_logic_vector(11 downto 0) := x"7E8"; 
-	constant fw_month			: std_logic_vector(3 downto 0)  := x"4"; 
-	constant fw_day			: std_logic_vector(7 downto 0)  := x"1E";
+	constant fw_month			: std_logic_vector(3 downto 0)  := x"5"; 
+	constant fw_day			: std_logic_vector(7 downto 0)  := x"17";
 	---------------------------------------
 	--//the following signals to/from Clock_Manager--
 	--signal clock_internal_10MHz_sys		:	std_logic;
@@ -159,8 +159,8 @@ architecture rtl of flower_top is
 	signal ch5_data : std_logic_vector(31 downto 0);
 	signal ch6_data : std_logic_vector(31 downto 0);
 	signal ch7_data : std_logic_vector(31 downto 0);
-	signal coinc_trig_scaler_bits : std_logic_vector(23 downto 0); --*moved to 24 bits, previously 12
-	signal phased_trig_scaler_bits : std_logic_vector(2*(num_beams+1) downto 0); --*moved to 24 bits, previously 12
+	signal coinc_trig_scaler_bits : std_logic_vector(17 downto 0); --*moved to 24 bits, previously 12
+	signal phased_trig_scaler_bits : std_logic_vector(2*(num_beams+1)-1 downto 0); --*moved to 24 bits, previously 12
 	signal trig_scaler_bits:  std_logic_vector(2*(num_beams+1) downto 0); --*moved to 24 bits, previously 12
 	signal scaler_to_read_int : std_logic_vector(23 downto 0);
 	signal coinc_trig_internal : std_logic;
@@ -183,6 +183,7 @@ architecture rtl of flower_top is
 	signal internal_pps_fast_sync_flag : std_logic;
 	signal internal_sma_trigger_input_assign : std_logic;
 	signal internal_sma_sync_input_assign : std_logic;
+	signal internal_coinc_trig_to_out_sma_en : std_logic := '0';
 	signal internal_phased_trig_to_out_sma_en : std_logic := '0';
 	signal internal_event_write_busy : std_logic := '0'; --flag if busy writing event to ram, or buffer still full
 
@@ -211,7 +212,7 @@ architecture rtl of flower_top is
 
 begin
 	systrig_o <= 'Z'; --this will break compile for flower/radiant setup, only for 2-flower terradaq
-
+	
 	--//test LED
 	gpio_board_io(5) <= gpio_sas_io(0); --clock_internal_1Hz;
 	gpio_board_io(6) <= clock_internal_10Hz;
@@ -435,7 +436,7 @@ begin
 			sma_aux0_io <= internal_sync_out;
 		when '0' => 
 			--add logic with the event_write_busy, so that secondary board doesn't keep getting triggers while the event is being written
-			sma_aux0_io <= phased_trig_internal and internal_phased_trig_to_out_sma_en and (not internal_event_write_busy);
+			sma_aux0_io <= phased_trig_internal and (internal_coinc_trig_to_out_sma_en or internal_phased_trig_to_out_sma_en)  and (not internal_event_write_busy);
 	end case;
 	end process;
 	
@@ -453,6 +454,12 @@ begin
 	-----------------------------------------
 	-----------------------------------------	
 	xCOINC_TRIG_OUTPUT_EN : signal_sync
+	port map(
+	clkA	=> clock_internal_25MHz_loc, clkB => clock_internal_core,
+	SignalIn_clkA	=> registers(96)(0), 
+	SignalOut_clkB	=>  internal_coinc_trig_to_out_sma_en);
+	
+	xPHASED_TRIG_OUTPUT_EN : signal_sync
 	port map(
 	clkA	=> clock_internal_25MHz_loc, clkB => clock_internal_core,
 	SignalIn_clkA	=> registers(96)(0), 

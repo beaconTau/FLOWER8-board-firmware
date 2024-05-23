@@ -29,8 +29,8 @@ create_clock -name adc1_fclk_i   	-period 500.000MHz 	[get_ports {adc1_fclk_i}]
 ####set false paths from async. resets
 #set_false_path -from {top_level:inst|sys_reset:xGLOBAL_RESET|pulse_stretcher_sync:xUSER_RESET|pulse_o} -to *
 #set_false_path -from {top_level:inst|sys_reset:xGLOBAL_RESET|pulse_stretcher_sync:xUSER_SYS_RESET|pulse_o} -to *
-set_false_path -from {flower_top:inst|reset_and_startup:xRESETS|fpga_reset_pwr} -to "*" 
-set_false_path -from {flower_top:inst|reset_and_startup:xRESETS|power_on_rst_o} -to "*"
+set_false_path -from {reset_and_startup:xRESETS|fpga_reset_pwr} -to "*" 
+set_false_path -from {reset_and_startup:xRESETS|power_on_rst_o} -to "*"
 #set_false_path -from {get_ports {board_clock_i} -to {flower_top:inst|reset_and_startup:xRESETS|power_on_rst_o}
 #set_false_path -from {top_level:inst|sys_reset:xGLOBAL_RESET|pulse_stretcher_sync:xADC_RESET|pulse_o} -to *
 

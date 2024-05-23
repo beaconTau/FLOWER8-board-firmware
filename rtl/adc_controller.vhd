@@ -71,7 +71,7 @@ entity adc_controller is
 		ch0_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch1_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch2_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
-		ch3_datastream_o	:	out std_logic_vector(31 downto 0);  --streaming data to trig block
+		ch3_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch4_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch5_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block
 		ch6_datastream_o	:	out std_logic_vector(31 downto 0); --streaming data to trig block

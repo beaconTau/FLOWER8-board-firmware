@@ -293,8 +293,8 @@ begin
 			internal_metadata_array(5) <= x"0" & "000" & pps_i & x"00" & x"0" & internal_trigger_type;
 			internal_metadata_array(6)(7 downto 0) <= coinc_trig_bits_metadata_i(7 downto 0);
 			--internal_metadata_array(6)(num_beams-1 downto 0) <= trig_bits_metadata_i; -- if less than 24 beams
-			internal_metadata_array(7)(23 downto 0) <= phased_trig_bits_metadata_i(23 downto 0); --if greater than 24 beams
-			internal_metadata_array(8)(num_beams-1-24 downto 0) <= phased_trig_bits_metadata_i(num_beams-1 downto 24);
+			internal_metadata_array(7)(num_beams-1 downto 0) <= phased_trig_bits_metadata_i(num_beams-1 downto 0); --if greater than 24 beams
+			--internal_metadata_array(8)(num_beams-1-24 downto 0) <= phased_trig_bits_metadata_i(num_beams-1 downto 24);
 		end if;
 	end if;
 end process;	

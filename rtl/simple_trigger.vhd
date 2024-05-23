@@ -47,7 +47,7 @@ port(
 		ch7_data_i	:	in		std_logic_vector(31 downto 0);
 		
 		last_trig_bits_latched_o : out std_logic_vector(7 downto 0); --for metadata - num beams>>>num_channels
-		trig_bits_o : 	out	std_logic_vector(23 downto 0); --for scalers
+		trig_bits_o : 	out	std_logic_vector(17 downto 0); --for scalers
 		coinc_trig_o: 	out	std_logic --trigger
 		);
 end simple_trigger;
@@ -78,7 +78,7 @@ signal servo_counter			: threshold_array;
 
 --signal last_trig_bits_latched : std_logic_vector(7 downto 0);
 
-signal trig_array_for_scalers : std_logic_vector(23 downto 0); --//on clk_data_i
+signal trig_array_for_scalers : std_logic_vector(17 downto 0); --//on clk_data_i
 
 signal coincidence_trigger_reg : std_logic_vector(1 downto 0);
 signal coincidence_trigger : std_logic; --actual trigger, one clk_data_i cycle
@@ -376,7 +376,7 @@ xVPPMODESYNC : signal_sync
 	SignalIn_clkA	=> registers_i(to_integer(unsigned(coinc_trig_param_reg)))(16), --vppmode
 	SignalOut_clkB	=> vppmode_int);
 --------------
-trig_array_for_scalers <=  "000000" & servo_clear(7) & servo_clear(6) &
+trig_array_for_scalers <=  servo_clear(7) & servo_clear(6) &
 									servo_clear(5) & servo_clear(4) & servo_clear(3) & servo_clear(2) &
 									servo_clear(1) & servo_clear(0) & coincidence_servo &
 									trig_clear(7) & trig_clear(6) & trig_clear(5) & 
@@ -385,7 +385,7 @@ trig_array_for_scalers <=  "000000" & servo_clear(7) & servo_clear(6) &
 ----TRIGGER OUT!!
 coinc_trig_o <= coincidence_trigger_reg(0); --coincidence_trigger; 
 --------------
-TrigToScalers	:	 for i in 0 to 23 generate
+TrigToScalers	:	 for i in 0 to 17 generate
 	xTRIGSYNC : flag_sync
 	port map(
 		clkA 			=> clk_data_i,

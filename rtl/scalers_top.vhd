@@ -27,8 +27,8 @@ entity scalers_top is
 		clk_i						:		in 	std_logic;
 		gate_i		   		:		in		std_logic;
 		reg_i				   	:		in		register_array_type;
-		coinc_trig_bits_i		:		in 	std_logic_vector(23 downto 0);
-		phased_trig_bits_i	:		in 	std_logic_vector(2*(num_beams)+2 downto 0);
+		coinc_trig_bits_i		:		in 	std_logic_vector(17 downto 0);
+		phased_trig_bits_i	:		in 	std_logic_vector(2*(num_beams+1)-1 downto 0);
 		
 		pps_cycle_counter_i : in std_logic_vector(47 downto 0);
 		
@@ -155,7 +155,7 @@ PhasedTrigScalers1HzGated : for i in 0 to 2*(num_beams+1)-1 generate
 		clk_i => clk_i,
 		refresh_i => refresh_clk_1Hz,
 		count_i => phased_trig_bits_i(i) and gate_i,
-		scaler_o => internal_scaler_array(integer(i+2*(num_beams+1)+60)));
+		scaler_o => internal_scaler_array(i+2*(num_beams+1)+60));
 end generate;
 --//scalers 
 PhasedTrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
@@ -165,7 +165,7 @@ PhasedTrigScalers100Hz : for i in 0 to 2*(num_beams+1)-1 generate
 		clk_i => clk_i,
 		refresh_i => refresh_clk_100Hz,
 		count_i => phased_trig_bits_i(i),
-		scaler_o => internal_scaler_array(integer(i+4*(num_beams+1)+60)));
+		scaler_o => internal_scaler_array(i+4*(num_beams+1)+60));
 end generate;
 
 -------------------------------------		
@@ -184,10 +184,10 @@ begin
 		
 	elsif rising_edge(clk_i) then
 	
-		if unsigned(reg_i(41)(8 downto 0))<num_scalers/2 then --9 bit address!!! 42 beam limit from this before the address exceeds 8 bits
-			scaler_to_read_o<=latched_scaler_array(2*to_integer(unsigned(reg_i(41)(8 downto 0)))+1)&latched_scaler_array(2*to_integer(unsigned(reg_i(41)(8 downto 0))));
+		if unsigned(reg_i(41)(7 downto 0))<94 then 
+			scaler_to_read_o<=latched_scaler_array(2*to_integer(unsigned(reg_i(41)(7 downto 0)))+1)&latched_scaler_array(2*to_integer(unsigned(reg_i(41)(7 downto 0))));
 		else
-		   scaler_to_read_o<=x"ffffff";
+		   scaler_to_read_o<=x"ffffff"; --make it more like an error message I suppose
 			--scaler_to_read_o<=latched_scaler_array(1)&latched_scaler_array(0);
 		end if;
 		
